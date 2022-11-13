@@ -1,10 +1,9 @@
 PHPC - CONJUGATE GRADIENT PROJECT
 
-HOWTO COMPILE AND RUN
+HOW TO COMPILE AND RUN
 =====================
 
-Requirements : 
-
+Requirements :
 - a recent compiler (like gcc or intel)
 - a cblas library (like openblas or intel MKL)
 
@@ -25,7 +24,8 @@ Call cgsolver() on matrix size (10000 x 10000)
 Time for CG = 36.269389 [s]
 ```
 
-The given example is a 5-points stencil for the 2D Laplace problem. The matrix is in sparse format.
+The given example is a 5-points stencil for the
+2D Laplace problem. The matrix is in sparse format.
 
-The matrix format is [Matrix Market format (.mtx extension)](https://sparse.tamu.edu/). You can use other matrices there or create your own. 
-
+The matrix format is [Matrix Market format (.mtx extension)](https://sparse.tamu.edu/). 
+You can use other matrices there or create your own.

@@ -7,51 +7,67 @@
 #ifndef __CG_HH__
 #define __CG_HH__
 
-/*v
- * oid CGSolver::solve(std::vector<double> & x)
-void CGSolver::read_matrix(const std::string & filename)
-void CGSolverSparse::solve(std::vector<double> & x)
-void CGSolverSparse::read_matrix(const std::string & filename)
-void MatrixCSR::mvm(const std::vector<double> & x, std::vector<double> & y)
-const void MatrixCSR::loadMMMatrix(const std::string & filename) void
-Solver::init_source_term(int n, double h)
-*/
+
 class Solver {
 public:
-  virtual void read_matrix(const std::string & filename) = 0;
-  void init_source_term(double h);
-  virtual void solve(std::vector<double> & x) = 0;
+    /// read matrix from .mtx file
+    virtual void read_matrix(const std::string & filename) = 0;
 
-  inline int m() const { return m_m; }
-  inline int n() const { return m_n; }
+    /// initialize source term
+    void init_source_term(double h);
 
-  void tolerance(double tolerance) { m_tolerance = tolerance; }
+    /// solve linear system with iterative CG
+    virtual void solve(std::vector<double> & x) = 0;
+
+    /// initialize size of the matrix (m = n)
+    inline int m() const { return m_m; }
+    inline int n() const { return m_n; }
+
+    /// prescribe residual tolerance for ending of the algorithm
+    void tolerance(double tolerance) { m_tolerance = tolerance; }
 
 protected:
-  int m_m{0};
-  int m_n{0};
-  std::vector<double> m_b;
-  double m_tolerance{1e-10};
+    /// initialize m and n
+    int m_m{0};
+    int m_n{0};
+
+    /// right hand side
+    std::vector<double> m_b;
+
+    /// residual tolerance
+    double m_tolerance{1e-10};
 };
 
 class CGSolver : public Solver {
 public:
-  CGSolver() = default;
-  virtual void read_matrix(const std::string & filename);
-  virtual void solve(std::vector<double> & x);
+    /// initialize solver
+    CGSolver() = default;
+
+    /// read matrix from .mtx file
+    virtual void read_matrix(const std::string & filename);
+
+    /// solve linear system with iterative CG
+    virtual void solve(std::vector<double> & x);
 
 private:
-  Matrix m_A;
+    /// finite element matrix
+    Matrix m_A;
 };
 
 class CGSolverSparse : public Solver {
 public:
-  CGSolverSparse() = default;
-  virtual void read_matrix(const std::string & filename);
-  virtual void solve(std::vector<double> & x);
+    /// initialize solver
+    CGSolverSparse() = default;
+
+    /// read matrix from .mtx file
+    virtual void read_matrix(const std::string & filename);
+
+    /// solve linear system with iterative CG
+    virtual void solve(std::vector<double> & x);
 
 private:
-  MatrixCOO m_A;
+    /// finite element matrix
+    MatrixCOO m_A;
 };
 
 #endif /* __CG_HH__ */

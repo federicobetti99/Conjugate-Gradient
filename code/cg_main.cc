@@ -6,10 +6,7 @@ using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
-/*
-Implementation of a simple CG solver using matrix in the mtx format (Matrix
-market) Any matrix in that format can be used to test the code
-*/
+
 int main(int argc, char ** argv) {
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " [martix-market-filename]"
