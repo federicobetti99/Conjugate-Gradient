@@ -1,28 +1,7 @@
-PHPC - CONJUGATE GRADIENT PROJECT
+PARALLEL AND HIGH PERFORMANCE COMPUTING - PROJECT
 
-HOW TO COMPILE AND RUN
-=====================
-
-Requirements :
-- a recent compiler (like gcc or intel)
-- a cblas library (like openblas or intel MKL)
-
-compile on SCITAS clusters :
-
-```
-$ module load gcc openblas
-$ make
-```
-
-You should see this output (timing is indicative) :
-
-```
-$ srun ./conjugategradient lap2D_5pt_n100.mtx 
-size of matrix = 10000 x 10000
-Call cgsolver() on matrix size (10000 x 10000)
-	[STEP 488] residual = 1.103472E-10
-Time for CG = 36.269389 [s]
-```
+This repository contains the Conjugate Gradient
+implementation with MPI Interface and CUDA kernels.
 
 The given example is a 5-points stencil for the
 2D Laplace problem. The matrix is in sparse format.
