@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --account=math-454
+#SBATCH -p serial
+
+module purge
+module load gcc openblas
+module load mvapich2
+
+make
+
+perf record -o perf.data --call-graph dwarf ./cgsolver lap2D_5pt_n100.mtx 
