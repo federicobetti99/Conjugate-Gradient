@@ -9,12 +9,6 @@ using time_point = std::chrono::time_point<clk>;
 
 void partition_matrix(int N, int psize, int start_rows[], int offsets_lengths[])
 {
-    start_rows.clear();
-    start_rows.reserve(psize+1);
-
-    offsets_lengths.clear();
-    offsets_lengths.reserve(psize+1);
-
     if (psize == 1)
     {
         start_rows[0] = 0;
@@ -57,8 +51,8 @@ int main(int argc, char ** argv) {
     int n = solver.n();
     int m = solver.m();
 
-    int start_rows(psize+1);
-    int offsets_lengths(psize+1);
+    int start_rows[psize+1];
+    int offsets_lengths[psize+1];
     partition_matrix(m, psize, start_rows, offsets_lengths);
 
     double h = 1. / n;
