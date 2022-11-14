@@ -34,7 +34,7 @@ function x = conj-grad(A, b, x)
 end
 
 */
-void CGSolver::solve(std::vector<double> & x) {
+void CGSolverSparse::solve(std::vector<double> & x) {
   std::vector<double> r(m_n);
   std::vector<double> p(m_n);
   std::vector<double> Ap(m_n);
@@ -117,7 +117,7 @@ void CGSolver::read_matrix(const std::string & filename) {
 /*
 Sparse version of the cg solver
 */
-void CGSolverSparse::solve(Matrix A_sub, std::vector<double> & b_sub,
+void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
                            std::vector<int> &start_rows,
                            std::vector<int> &offsets_lengths,
                            std::vector<double> & x) {
@@ -213,20 +213,20 @@ void Solver::init_source_term(double h) {
     }
 }
 
-Matrix Solver::get_submatrix(int N_loc, int start_m) {
+Matrix CGSolver::get_submatrix(int N_loc, int start_m) {
     Matrix submatrix;
     submatrix.resize(N_loc, m_n);
 
     for (int i = 0; i < N_loc; i++) {
         for (int j = 0; j < m_n; j++) {
-            submatrix[i, j] = m_A[i + start_m][j]
+            submatrix[i][j] = m_A[i + start_m][j]
         }
     }
 
     return submatrix;
 }
 
-std::vector<double> Solver::get_subvector(int N_loc, int start_m) {
+std::vector<double> CGSolver::get_subvector(int N_loc, int start_m) {
     std::vector<double> vec;
     vec.resize(N_loc);
 

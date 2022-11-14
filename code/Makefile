@@ -1,6 +1,5 @@
 CXX=g++
 LD=${CXX}
-CXXFLAGS='-g -pg'
 CXXFLAGS+=-Wall -Wextra -Werror -pedantic -std=c++11 -I${OPENBLAS_ROOT}/include
 LDFLAGS+=-lm $(CXXFLAGS) -L${OPENBLAS_ROOT}/lib -lopenblas
 
