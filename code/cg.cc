@@ -50,6 +50,8 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     std::vector<double> Ap_sub(m_n);
     std::vector<double> tmp_sub(m_n);
 
+    std::cout << prank << ": Good after initialization" << std::endl;
+
     // r = b - A * x;
     std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., A_sub.data(), m_n,
@@ -57,11 +59,15 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     r_sub = b_sub;
     cblas_daxpy(m_n, -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
+    std::cout << prank << ": Good after computation of the residual" << std::endl;
+
     // p = r;
     p_sub = r_sub;
 
     // rsold = r' * r;
     auto rsold = cblas_ddot(m_n, r_sub.data(), 1, r_sub.data(), 1);
+
+    std::cout << prank << ": Good after rsold computation" << std::endl;
 
     // for i = 1:length(b)
     int k = 0;

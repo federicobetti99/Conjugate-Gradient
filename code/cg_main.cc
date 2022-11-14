@@ -7,6 +7,7 @@ using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
+
 void partition_matrix(int N, int psize, int start_rows[], int offsets_lengths[])
 {
     if (psize == 1)
