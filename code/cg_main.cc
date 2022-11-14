@@ -62,7 +62,7 @@ int main(int argc, char ** argv) {
     partition_matrix(m, psize, start_rows, offsets_lengths);
 
     double h = 1. / n;
-    solver.init_source_term(h, offsets_lengths[prank], start_rows[prank]);
+    solver.init_source_term(h);
 
     Matrix A_sub = solver.get_submatrix(offsets_lengths[prank], start_rows[prank]);
     std::vector<double> b_sub = solver.get_subvector(offsets_lengths[prank], start_rows[prank]);
