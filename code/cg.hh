@@ -19,8 +19,8 @@ public:
 
     /// solve linear system with iterative CG
     virtual void solve(Matrix A_sub, std::vector<double> & b_sub,
-                       std::vector<int> &start_rows,
-                       std::vector<int> &offsets_lengths,
+                       int start_rows[],
+                       int offsets_lengths[],
                        std::vector<double> & x) = 0;
 
     /// initialize size of the matrix (in this case m = n)
