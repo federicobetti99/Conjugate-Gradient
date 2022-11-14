@@ -11,23 +11,23 @@ void partition_matrix(int N, int psize, int * start_rows, int * offsets_lengths)
 {
     if (psize == 1)
     {
-        start_rows.emplace_back(0);
-        offsets_lengths.emplace_back(N);
+        start_rows[0] = 0;
+        offsets_lengths[0] = N;
     }
     else
     {
         int N_loc = N / psize;
-        start_rows.emplace_back(0);
-        offsets_lengths.emplace_back(N_loc + 1);
+        start_rows[0] = 0;
+        offsets_lengths[0] = N_loc + 1;
         int i0 = N_loc - 1;
         for(int prank = 1; prank < (psize-1); prank++)
         {
-            start_rows.emplace_back(i0);
-            offsets_lengths.emplace_back(N_loc + 2);
+            start_rows[prank] = i0;
+            offsets_lengths[prank] = N_loc + 2;
             i0 += N_loc;
         }
-        start_rows.emplace_back(i0);
-        offsets_lengths.emplace_back(N - i0);
+        start_rows[psize] = i0;
+        offsets_lengths[psize] = N - i0;
     }
 }
 
@@ -51,8 +51,8 @@ int main(int argc, char ** argv) {
     int n = solver.n();
     int m = solver.m();
 
-    int * start_rows[psize];
-    int * offsets_lengths[psize];
+    int *start_rows[psize];
+    int *offsets_lengths[psize];
     partition_matrix(m, psize, start_rows, offsets_lengths);
 
     double h = 1. / n;
