@@ -14,12 +14,21 @@ public:
     virtual void read_matrix(const std::string & filename) = 0;
 
     /// initialize source term
-    void init_source_term(double h);
+    void init_source_term(double h, int N_loc, int offset);
+
+    /// get submatrix for parallel computation
+    Matrix get_submatrix(int N_loc, int start_m);
+
+    /// get subvector for parallel computation
+    std::vector<double> get_subvector(int N_loc, int start_m);
 
     /// solve linear system with iterative CG
-    virtual void solve(std::vector<double> & x) = 0;
+    virtual void solve(Matrix A_sub, std::vector<double> & b_sub,
+                       std::vector<int> &start_rows,
+                       std::vector<int> &offsets_lengths,
+                       std::vector<double> & x) = 0;
 
-    /// initialize size of the matrix (m = n)
+    /// initialize size of the matrix (in this case m = n)
     inline int m() const { return m_m; }
     inline int n() const { return m_n; }
 
