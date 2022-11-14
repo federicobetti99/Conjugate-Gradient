@@ -36,8 +36,8 @@ end
 */
 
 void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
-                     std::vector<int> &start_rows,
-                     std::vector<int> &offsets_lengths,
+                     int start_rows[],
+                     int offsets_lengths[],
                      std::vector<double> & x) {
 
     int prank;
