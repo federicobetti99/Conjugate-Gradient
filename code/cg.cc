@@ -127,7 +127,7 @@ Matrix CGSolver::get_submatrix(int N_loc, int start_m) {
 
     for (int i = 0; i < N_loc; i++) {
         for (int j = 0; j < m_n; j++) {
-            submatrix(i, j) = m_A(i + start_m, j)
+            submatrix(i, j) = m_A(i + start_m, j);
         }
     }
 
