@@ -51,8 +51,10 @@ int main(int argc, char ** argv) {
     int n = solver.n();
     int m = solver.m();
 
-    int start_rows[psize+1];
-    int offsets_lengths[psize+1];
+    int *start_rows;
+    start_rows = new int [psize+1];
+    int *offsets_lengths;
+    offsets_lengths = new int [psize+1];
     partition_matrix(m, psize, start_rows, offsets_lengths);
 
     double h = 1. / n;
