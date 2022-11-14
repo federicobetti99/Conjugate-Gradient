@@ -181,7 +181,7 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
 
     MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank],
                    MPI_DOUBLE, &p.front(),
-                   offsets_lenghts, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+                   offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
     if (DEBUG) {
       std::cout << "\t[STEP " << k << "] residual = " << std::scientific
@@ -219,7 +219,7 @@ Matrix CGSolver::get_submatrix(int N_loc, int start_m) {
 
     for (int i = 0; i < N_loc; i++) {
         for (int j = 0; j < m_n; j++) {
-            submatrix[i][j] = m_A[i + start_m][j]
+            submatrix(i, j) = m_A(i + start_m, j)
         }
     }
 
