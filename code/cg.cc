@@ -51,7 +51,9 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     std::vector<double> tmp_sub(m_n);
 
     // r = b - A * x;
-    A_sub.mat_vec(x, Ap_sub);
+    std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., A_sub.data(), m_n,
+                x.data(), 1, 0., Ap_sub.data(), 1);
     r_sub = b_sub;
     cblas_daxpy(m_n, -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
@@ -67,7 +69,10 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
 
         // Ap = A * p;
         /// MPI: we need to gather p in the end to compute this matrix-vector product at every iteration
-        A_sub.mat_vec(p, Ap_sub);
+        // Ap = A * p;
+        std::fill_n(Ap.begin(), Ap.size(), 0.);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., A_sub.data(), m_n,
+                    p.data(), 1, 0., Ap_sub.data(), 1);
 
         // alpha = rsold / (p' * Ap);
         auto alpha = rsold / std::max(cblas_ddot(m_n, p_sub.data(), 1, Ap_sub.data(), 1),
