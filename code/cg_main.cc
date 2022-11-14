@@ -7,14 +7,8 @@ using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
-void partition_matrix(int N, int psize, std::vector<int> &start_rows, std::vector<int> &offsets_lengths)
+void partition_matrix(int N, int psize, int * start_rows, int * offsets_lengths)
 {
-    start_rows.clear();
-    start_rows.reserve(psize + 1);
-
-    offsets_lengths.clear();
-    offsets_lengths.reserve(psize + 1);
-
     if (psize == 1)
     {
         start_rows.emplace_back(0);
@@ -57,8 +51,8 @@ int main(int argc, char ** argv) {
     int n = solver.n();
     int m = solver.m();
 
-    std::vector<int> start_rows;
-    std::vector<int> offsets_lengths;
+    int * start_rows[psize];
+    int * offsets_lengths[psize];
     partition_matrix(m, psize, start_rows, offsets_lengths);
 
     double h = 1. / n;
