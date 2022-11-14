@@ -6,7 +6,7 @@
 #include <iostream>
 
 const double NEARZERO = 1.0e-14;
-const bool DEBUG = false;
+const bool DEBUG = true;
 
 /*
     cg-solver solves the linear equation A*x = b where A is
@@ -50,51 +50,40 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     std::vector<double> Ap_sub(m_n);
     std::vector<double> tmp_sub(m_n);
 
-    std::cout << prank << ": Good after initialization" << std::endl;
-
     // r = b - A * x;
     std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., A_sub.data(), m_n,
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), A_sub.n(), 1., A_sub.data(), x.size(),
                 x.data(), 1, 0., Ap_sub.data(), 1);
     r_sub = b_sub;
-    cblas_daxpy(m_n, -1., Ap_sub.data(), 1, r_sub.data(), 1);
-
-    std::cout << prank << ": Good after computation of the residual" << std::endl;
+    cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
     // p = r;
     p_sub = r_sub;
 
     // rsold = r' * r;
-    auto rsold = cblas_ddot(m_n, r_sub.data(), 1, r_sub.data(), 1);
-
-    std::cout << prank << ": Good after rsold computation" << std::endl;
+    auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
 
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
-
-        // Ap = A * p;
         /// MPI: we need to gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
         std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., A_sub.data(), m_n,
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), A_sub.n(), 1., A_sub.data(), p.size(),
                     p.data(), 1, 0., Ap_sub.data(), 1);
 
         // alpha = rsold / (p' * Ap);
-        auto alpha = rsold / std::max(cblas_ddot(m_n, p_sub.data(), 1, Ap_sub.data(), 1),
+        auto alpha = rsold / std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap_sub.data(), 1),
                                       rsold * NEARZERO);
 
-        /// MPI: reduce the coefficient computed on each submatrix with sum
-        MPI_Allreduce(MPI_IN_PLACE, &alpha, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-
         // x = x + alpha * p;
-        cblas_daxpy(m_n, alpha, p_sub.data(), 1, x_sub.data(), 1);
+        cblas_daxpy(p_sub.size(), alpha, p_sub.data(), 1, x_sub.data(), 1);
 
         // r = r - alpha * Ap;
-        cblas_daxpy(m_n, -alpha, Ap_sub.data(), 1, r_sub.data(), 1);
+        cblas_daxpy(r_sub.size(), -alpha, Ap_sub.data(), 1, r_sub.data(), 1);
 
         // rsnew = r' * r;
-        auto rsnew = cblas_ddot(m_n, r_sub.data(), 1, r_sub.data(), 1);
+        auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
 
         if (std::sqrt(rsnew) < m_tolerance)
             break; // Convergence test
@@ -102,7 +91,7 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
         auto beta = rsnew / rsold;
         // p = r + (rsnew / rsold) * p;
         tmp_sub = r_sub;
-        cblas_daxpy(m_n, beta, p_sub.data(), 1, tmp_sub.data(), 1);
+        cblas_daxpy(p_sub.size(), beta, p_sub.data(), 1, tmp_sub.data(), 1);
         p_sub = tmp_sub;
 
         // rsold = rsnew;
@@ -146,8 +135,7 @@ Matrix CGSolver::get_submatrix(int N_loc, int start_m) {
 }
 
 std::vector<double> CGSolver::get_subvector(int N_loc, int start_m) {
-    std::vector<double> vec;
-    vec.resize(N_loc);
+    std::vector<double> vec(N_loc);
 
     for (int i = 0; i < N_loc; i++) {
         vec[i] = m_b[start_m + i];

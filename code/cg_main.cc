@@ -19,12 +19,12 @@ void partition_matrix(int N, int psize, int start_rows[], int offsets_lengths[])
     {
         int N_loc = N / psize;
         start_rows[0] = 0;
-        offsets_lengths[0] = N_loc + 1;
-        int i0 = N_loc - 1;
-        for(int prank = 1; prank < (psize-1); prank++)
+        offsets_lengths[0] = N_loc;
+        int i0 = N_loc;
+        for(int prank = 1; prank < psize; prank++)
         {
             start_rows[prank] = i0;
-            offsets_lengths[prank] = N_loc + 2;
+            offsets_lengths[prank] = N_loc;
             i0 += N_loc;
         }
         start_rows[psize] = i0;
