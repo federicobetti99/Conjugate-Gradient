@@ -70,7 +70,7 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
         // Ap = A * p;
         /// MPI: we need to gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
-        std::fill_n(Ap.begin(), Ap.size(), 0.);
+        std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., A_sub.data(), m_n,
                     p.data(), 1, 0., Ap_sub.data(), 1);
 
@@ -104,7 +104,7 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
 
         MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank],
                        MPI_DOUBLE, &p.front(),
-                       offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+                       &offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
         if (DEBUG) {
             std::cout << "\t[STEP " << k << "] residual = " << std::scientific
@@ -116,7 +116,7 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     /// MPI: construct the solution from x_sub to x
     MPI_Gatherv(&x_sub.front(), offsets_lengths[prank],
                 MPI_DOUBLE, &x.front(),
-                offsets_lengths, start_rows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                &offsets_lengths, start_rows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
 
