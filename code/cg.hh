@@ -15,7 +15,7 @@ public:
     virtual void read_matrix(const std::string & filename) = 0;
 
     /// initialize source term
-    void init_source_term(double h, int N_loc, int offset);
+    void init_source_term(double h);
 
     /// solve linear system with iterative CG
     virtual void solve(Matrix A_sub, std::vector<double> & b_sub,
