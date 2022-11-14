@@ -182,7 +182,7 @@ void CGSolverSparse::solve(std::vector<double> & x) {
     r = m_b;
     cblas_daxpy(m_n, -1., Ap.data(), 1, r.data(), 1);
 
-    // p = r;
+    // p = r, copy
     p = r;
 
     // rsold = r' * r;
