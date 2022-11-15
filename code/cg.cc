@@ -60,6 +60,8 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     // p = r;
     p_sub = r_sub;
 
+    MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank],                                                                                                                       MPI_DOUBLE, &p.front(),                                                                                                                                       offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+
     // rsold = r' * r;
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
 
@@ -84,8 +86,11 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
 
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
+	
+        double rstot = 0.;
+        MPI_Allreduce(&rstot, &rsnew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
 
-        if (std::sqrt(rsnew) < m_tolerance)
+        if (std::sqrt(rstot) < m_tolerance)
             break; // Convergence test
 
         auto beta = rsnew / rsold;
@@ -101,9 +106,9 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
                        MPI_DOUBLE, &p.front(),
                        offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
-        if (DEBUG) {
+        if (DEBUG && prank == 0) {
             std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::flush;
+                      << std::sqrt(rsold) << "\r" << std::endl;
         }
 
     }

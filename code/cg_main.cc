@@ -71,7 +71,7 @@ int main(int argc, char ** argv) {
     auto t1 = clk::now();
     solver.solve(A_sub, b_sub, start_rows, offsets_lengths, x_d);
     second elapsed = clk::now() - t1;
-    std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
+    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
     MPI_Finalize();
     return 0;
