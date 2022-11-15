@@ -1,10 +1,12 @@
-PARALLEL AND HIGH PERFORMANCE COMPUTING - PROJECT
+## PARALLEL AND HIGH PERFORMANCE COMPUTING - PROJECT
 
 This repository contains the Conjugate Gradient
-implementation with MPI Interface and CUDA kernels.
+implementation with MPI Interface and CUDA kernels. The project is carried out in the context of the
+MATH-454 Parallel and High Performance Computing course at EPFL.
 
-The given example is a 5-points stencil for the
-2D Laplace problem. The matrix is in sparse format.
+### Repository Description
+* code - Contains the implementations
+* report - Contains the report
 
-The matrix format is [Matrix Market format (.mtx extension)](https://sparse.tamu.edu/). 
-You can use other matrices there or create your own.
+### Authors
+- Federico Betti
