@@ -36,6 +36,7 @@ void partition_matrix(int N, int psize, int start_rows[], int offsets_lengths[])
 int main(int argc, char ** argv) {
     MPI_Init(&argc, &argv);
 
+    /// MPI: Initialize and get rank
     int prank, psize;
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
     MPI_Comm_size(MPI_COMM_WORLD, &psize);
@@ -46,33 +47,37 @@ int main(int argc, char ** argv) {
     return 1;
     }
 
+    // initialize solver and read matrix from file
     CGSolver solver;
     solver.read_matrix(argv[1]);
 
+    // get size of the matrix
     int n = solver.n();
     int m = solver.m();
 
+    /// MPI: domain decomposition along rows
     int *start_rows;
     start_rows = new int [psize+1];
     int *offsets_lengths;
     offsets_lengths = new int [psize+1];
     partition_matrix(m, psize, start_rows, offsets_lengths);
 
+    // initialize global source term
     double h = 1. / n;
     solver.init_source_term(h);
 
-    Matrix A_sub = solver.get_submatrix(offsets_lengths[prank], start_rows[prank]);
-    std::vector<double> b_sub = solver.get_subvector(offsets_lengths[prank], start_rows[prank]);
-
+    // initialize solution vector
     std::vector<double> x_d(n);
     std::fill(x_d.begin(), x_d.end(), 0.);
 
-    std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
+    // solve and print statistics
+    (if prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
-    solver.solve(A_sub, b_sub, start_rows, offsets_lengths, x_d);
+    solver.solve(prank, start_rows, offsets_lengths, x_d);
     second elapsed = clk::now() - t1;
     if (prank == 0) std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
+    /// MPI: Finalize
     MPI_Finalize();
     return 0;
 }

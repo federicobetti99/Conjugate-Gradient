@@ -22,37 +22,43 @@ function x = conj-grad(A, b, x)
     for i = 1:length(b)
         Ap = A * p;
         alpha = rsold / (p' * Ap);
-        x = x + alpha * p;
-        r = r - alpha * Ap;
-        rsnew = r' * r;
-        if sqrt(rsnew) < 1e-10
+        x =A_sub.n()alpha * p;
+        r = r - alphaA_sub.n();
+        rsnew = rA_sub.n();
+        if sqrt(rsnew) <A_sub.n()0
               break;
         end
         p = r + (rsnew / rsold) * p;
-        rsold = rsnew;
+        rsold = A_sub.n();
     end
 end
 
 */
 
-void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
+void CGSolver::solve(int prank,
                      int start_rows[],
                      int offsets_lengths[],
                      std::vector<double> & x) {
 
-    int prank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &prank);
-
+    /// global variables
     std::vector<double> p(m_n);
-    std::vector<double> x_sub(A_sub.n());
-    std::vector<double> r_sub(A_sub.n());
-    std::vector<double> p_sub(A_sub.n());
     std::vector<double> Ap_sub(m_n);
     std::vector<double> tmp_sub(m_n);
 
+    /// rank dependent variables
+    // compute subpart of the matrix destined to prank
+    Matrix A_sub = solver.get_submatrix(offsets_lengths[prank], start_rows[prank]);
+    // compute subpart of the right hand side destined to prank
+    std::vector<double> b_sub = solver.get_subvector(offsets_lengths[prank], start_rows[prank]);
+    // initialize conjugated direction, residual and solution for current prank
+    N_loc = A_sub.n();
+    std::vector<double> x_sub(N_loc);
+    std::vector<double> r_sub(N_loc);
+    std::vector<double> p_sub(N_loc);
+
     // r = b - A * x;
     std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), A_sub.n(), 1., A_sub.data(), x.size(),
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), N_loc, 1., A_sub.data(), x.size(),
                 x.data(), 1, 0., Ap_sub.data(), 1);
     r_sub = b_sub;
     cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
@@ -60,7 +66,9 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     // p = r;
     p_sub = r_sub;
 
-    MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank],                                                                                                                       MPI_DOUBLE, &p.front(),                                                                                                                                       offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+    /// First call to gather collective communication
+    MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
+                   &p.front(), offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
     // rsold = r' * r;
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
@@ -68,10 +76,11 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
+
         /// MPI: we need to gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
         std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), A_sub.n(), 1., A_sub.data(), p.size(),
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), N_loc, 1., A_sub.data(), p.size(),
                     p.data(), 1, 0., Ap_sub.data(), 1);
 
         // alpha = rsold / (p' * Ap);
@@ -86,14 +95,17 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
 
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
-	
-        double rstot = 0.;
-        MPI_Allreduce(&rstot, &rsnew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
+
+        /// MPI: get global residual by reduction to check convergence
+        /// Note that this is a stronger requirement for convergence than checking on each prank
+        double rstot = 0.
+        MPI_Allreduce(&rstot, &rsew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
         if (std::sqrt(rstot) < m_tolerance)
             break; // Convergence test
 
         auto beta = rsnew / rsold;
+
         // p = r + (rsnew / rsold) * p;
         tmp_sub = r_sub;
         cblas_daxpy(p_sub.size(), beta, p_sub.data(), 1, tmp_sub.data(), 1);
@@ -102,18 +114,20 @@ void CGSolver::solve(Matrix A_sub, std::vector<double> & b_sub,
         // rsold = rsnew;
         rsold = rsnew;
 
+        /// collective communication: gather p_sub in a global vector p from all ranks to all ranks
         MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank],
                        MPI_DOUBLE, &p.front(),
                        offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
-        if (DEBUG && prank == 0) {
-            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::endl;
+        if (DEBUG) {
+            if (prank == 0) {
+                std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+                          << std::sqrt(rsold) << "\r" << std::endl;
+            }
         }
-
     }
 
-    /// MPI: construct the solution from x_sub to x
+    /// MPI: construct the solution from x_sub to x by stacking together the x_sub in precise order
     MPI_Gatherv(&x_sub.front(), offsets_lengths[prank],
                 MPI_DOUBLE, &x.front(),
                 offsets_lengths, start_rows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -129,23 +143,19 @@ void CGSolver::read_matrix(const std::string & filename) {
 Matrix CGSolver::get_submatrix(int N_loc, int start_m) {
     Matrix submatrix;
     submatrix.resize(N_loc, m_n);
-
     for (int i = 0; i < N_loc; i++) {
         for (int j = 0; j < m_n; j++) {
             submatrix(i, j) = m_A(i + start_m, j);
         }
     }
-
     return submatrix;
 }
 
 std::vector<double> CGSolver::get_subvector(int N_loc, int start_m) {
     std::vector<double> vec(N_loc);
-
     for (int i = 0; i < N_loc; i++) {
         vec[i] = m_b[start_m + i];
     }
-
     return vec;
 }
 
