@@ -71,7 +71,7 @@ int main(int argc, char ** argv) {
     std::fill(x_d.begin(), x_d.end(), 0.);
 
     // solve and print statistics
-    (if prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
+    if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
     solver.solve(prank, start_rows, offsets_lengths, x_d);
     second elapsed = clk::now() - t1;

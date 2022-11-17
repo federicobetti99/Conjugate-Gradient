@@ -18,7 +18,7 @@ public:
     void init_source_term(double h);
 
     /// solve linear system with iterative CG
-    virtual void solve(Matrix A_sub, std::vector<double> & b_sub,
+    virtual void solve(int prank,
                        int start_rows[],
                        int offsets_lengths[],
                        std::vector<double> & x) = 0;
@@ -57,9 +57,9 @@ public:
     std::vector<double> get_subvector(int N_loc, int start_m);
 
     /// solve linear system with iterative CG
-    virtual void solve(Matrix A_sub, std::vector<double> & b_sub, 
+    virtual void solve(int prank, 
 		       int start_rows[],
-               int offsets_lengths[],
+               	       int offsets_lengths[],
 		       std::vector<double> & x);
 
 private:

@@ -47,26 +47,25 @@ void CGSolver::solve(int prank,
 
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
-    Matrix A_sub = solver.get_submatrix(offsets_lengths[prank], start_rows[prank]);
-    // compute subpart of the right hand side destined to prank
-    std::vector<double> b_sub = solver.get_subvector(offsets_lengths[prank], start_rows[prank]);
+    Matrix A_sub = this->get_submatrix(offsets_lengths[prank], start_rows[prank]);
     // initialize conjugated direction, residual and solution for current prank
-    N_loc = A_sub.n();
+    int N_loc = A_sub.m();
     std::vector<double> x_sub(N_loc);
     std::vector<double> r_sub(N_loc);
     std::vector<double> p_sub(N_loc);
 
     // r = b - A * x;
     std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), N_loc, 1., A_sub.data(), x.size(),
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, A_sub.n(), 1., A_sub.data(), x.size(),
                 x.data(), 1, 0., Ap_sub.data(), 1);
-    r_sub = b_sub;
+    r_sub = this->m_b;
+
     cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
     // p = r;
     p_sub = r_sub;
 
-    /// First call to gather collective communication
+    /// MPI: First call to gather collective communication
     MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
                    &p.front(), offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
@@ -95,13 +94,8 @@ void CGSolver::solve(int prank,
 
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
-
-        /// MPI: get global residual by reduction to check convergence
-        /// Note that this is a stronger requirement for convergence than checking on each prank
-        double rstot = 0.
-        MPI_Allreduce(&rstot, &rsew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-        if (std::sqrt(rstot) < m_tolerance)
+        
+        if (std::sqrt(rsnew) < m_tolerance)
             break; // Convergence test
 
         auto beta = rsnew / rsold;
@@ -115,9 +109,8 @@ void CGSolver::solve(int prank,
         rsold = rsnew;
 
         /// collective communication: gather p_sub in a global vector p from all ranks to all ranks
-        MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank],
-                       MPI_DOUBLE, &p.front(),
-                       offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
+		       &p.front(), offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
         if (DEBUG) {
             if (prank == 0) {
@@ -128,9 +121,9 @@ void CGSolver::solve(int prank,
     }
 
     /// MPI: construct the solution from x_sub to x by stacking together the x_sub in precise order
-    MPI_Gatherv(&x_sub.front(), offsets_lengths[prank],
-                MPI_DOUBLE, &x.front(),
-                offsets_lengths, start_rows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(&x_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
+		&x.front(), offsets_lengths, start_rows, MPI_DOUBLE,
+		0, MPI_COMM_WORLD);
 }
 
 
@@ -173,7 +166,6 @@ void CGSolverSparse::read_matrix(const std::string & filename) {
 /// initialization of the source term b
 void Solver::init_source_term(double h) {
     m_b.resize(m_n);
-
     for (int i = 0; i < m_n; i++) {
         m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
              std::sin(10. * M_PI * i * h);
