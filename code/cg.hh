@@ -54,7 +54,7 @@ public:
     Matrix get_submatrix(int N_loc, int start_m);    
 
     /// get subvector for parallel computation
-    std::vector<double> get_subvector(int N_loc, int start_m);
+    std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
 
     /// solve linear system with iterative CG
     virtual void solve(int prank, 

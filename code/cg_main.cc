@@ -2,6 +2,7 @@
 #include <chrono>
 #include <iostream>
 #include <mpi.h>
+#include <fstream>
 
 using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
@@ -21,14 +22,14 @@ void partition_matrix(int N, int psize, int start_rows[], int offsets_lengths[])
         start_rows[0] = 0;
         offsets_lengths[0] = N_loc;
         int i0 = N_loc;
-        for(int prank = 1; prank < psize; prank++)
+        for(int prank = 1; prank < psize-1; prank++)
         {
             start_rows[prank] = i0;
             offsets_lengths[prank] = N_loc;
             i0 += N_loc;
         }
-        start_rows[psize] = i0;
-        offsets_lengths[psize] = N - i0;
+        start_rows[psize-1] = i0;
+        offsets_lengths[psize-1] = N - i0;
     }
 }
 
@@ -57,9 +58,9 @@ int main(int argc, char ** argv) {
 
     /// MPI: domain decomposition along rows
     int *start_rows;
-    start_rows = new int [psize+1];
+    start_rows = new int [psize];
     int *offsets_lengths;
-    offsets_lengths = new int [psize+1];
+    offsets_lengths = new int [psize];
     partition_matrix(m, psize, start_rows, offsets_lengths);
 
     // initialize global source term
@@ -71,11 +72,19 @@ int main(int argc, char ** argv) {
     std::fill(x_d.begin(), x_d.end(), 0.);
 
     // solve and print statistics
-    if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
+    std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
     solver.solve(prank, start_rows, offsets_lengths, x_d);
     second elapsed = clk::now() - t1;
-    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
+    std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
+
+    second max_time;                                                                                                                                              MPI_Reduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    if (prank == 0) {
+	// save results to file
+	std::ofstream outfile;                                                                                                                                        outfile.open("strong_scaling.txt", std::ios_base::app);                                                                                                       outfile << psize << "," << max_time.count() << std::endl;
+        outfile.close();
+    } 
 
     /// MPI: Finalize
     MPI_Finalize();

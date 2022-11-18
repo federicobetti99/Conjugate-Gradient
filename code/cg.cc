@@ -23,13 +23,13 @@ function x = conj-grad(A, b, x)
         Ap = A * p;
         alpha = rsold / (p' * Ap);
         x =A_sub.n()alpha * p;
-        r = r - alphaA_sub.n();
-        rsnew = rA_sub.n();
-        if sqrt(rsnew) <A_sub.n()0
+        r = r - alphaA_sub;
+        rsnew = rA_sub;
+        if sqrt(rsnew) < tolerance
               break;
         end
         p = r + (rsnew / rsold) * p;
-        rsold = A_sub.n();
+        rsold = rsnew;
     end
 end
 
@@ -40,37 +40,29 @@ void CGSolver::solve(int prank,
                      int offsets_lengths[],
                      std::vector<double> & x) {
 
-    /// global variables
-    std::vector<double> p(m_n);
-    std::vector<double> Ap_sub(m_n);
-    std::vector<double> tmp_sub(m_n);
-
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
     Matrix A_sub = this->get_submatrix(offsets_lengths[prank], start_rows[prank]);
+
     // initialize conjugated direction, residual and solution for current prank
     int N_loc = A_sub.m();
-    std::vector<double> x_sub(N_loc);
-    std::vector<double> r_sub(N_loc);
-    std::vector<double> p_sub(N_loc);
+    std::vector<double> Ap(N_loc);
+    std::vector<double> tmp_sub(N_loc);
+    std::vector<double> r_sub = this->get_subvector(this->m_b, offsets_lengths[prank], start_rows[prank]);
+    std::vector<double> x_sub = this->get_subvector(x,         offsets_lengths[prank], start_rows[prank]); 
 
     // r = b - A * x;
-    std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
+    std::fill_n(Ap.begin(), Ap.size(), 0.);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, A_sub.n(), 1., A_sub.data(), x.size(),
-                x.data(), 1, 0., Ap_sub.data(), 1);
-    r_sub = this->m_b;
+                x.data(), 1, 0., Ap.data(), 1);
 
-    cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
+    cblas_daxpy(r_sub.size(), -1., Ap.data(), 1, r_sub.data(), 1);
 
-    // p = r;
-    p_sub = r_sub;
+    std::vector<double> p_sub = r_sub;
+    std::vector<double> p = this->m_b;
 
-    /// MPI: First call to gather collective communication
-    MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
-                   &p.front(), offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
-
-    // rsold = r' * r;
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
+    MPI_Allreduce(MPI_IN_PLACE, &rsold, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     // for i = 1:length(b)
     int k = 0;
@@ -78,22 +70,26 @@ void CGSolver::solve(int prank,
 
         /// MPI: we need to gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
-        std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, A_sub.m(), N_loc, 1., A_sub.data(), p.size(),
-                    p.data(), 1, 0., Ap_sub.data(), 1);
+        std::fill_n(Ap.begin(), Ap.size(), 0.);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, p.size(), 1., A_sub.data(), p.size(),
+                    p.data(), 1, 0., Ap.data(), 1);
 
         // alpha = rsold / (p' * Ap);
-        auto alpha = rsold / std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap_sub.data(), 1),
-                                      rsold * NEARZERO);
+        auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap.data(), 1),                                                                                                      rsold * NEARZERO);
+
+        MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+        auto alpha = rsold / conj;
 
         // x = x + alpha * p;
-        cblas_daxpy(p_sub.size(), alpha, p_sub.data(), 1, x_sub.data(), 1);
+        cblas_daxpy(x_sub.size(), alpha, p_sub.data(), 1, x_sub.data(), 1);
 
         // r = r - alpha * Ap;
-        cblas_daxpy(r_sub.size(), -alpha, Ap_sub.data(), 1, r_sub.data(), 1);
+        cblas_daxpy(r_sub.size(), -alpha, Ap.data(), 1, r_sub.data(), 1);
 
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
+        MPI_Allreduce(MPI_IN_PLACE, &rsnew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);       
         
         if (std::sqrt(rsnew) < m_tolerance)
             break; // Convergence test
@@ -115,7 +111,7 @@ void CGSolver::solve(int prank,
         if (DEBUG) {
             if (prank == 0) {
                 std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                          << std::sqrt(rsold) << "\r" << std::endl;
+                          << std::sqrt(rsnew) << "\r" << std::endl;
             }
         }
     }
@@ -135,21 +131,21 @@ void CGSolver::read_matrix(const std::string & filename) {
 
 Matrix CGSolver::get_submatrix(int N_loc, int start_m) {
     Matrix submatrix;
-    submatrix.resize(N_loc, m_n);
+    submatrix.resize(N_loc, this->m_n);
     for (int i = 0; i < N_loc; i++) {
         for (int j = 0; j < m_n; j++) {
-            submatrix(i, j) = m_A(i + start_m, j);
+            submatrix(i, j) = this->m_A(i + start_m, j);
         }
     }
     return submatrix;
 }
 
-std::vector<double> CGSolver::get_subvector(int N_loc, int start_m) {
-    std::vector<double> vec(N_loc);
+std::vector<double> CGSolver::get_subvector(std::vector<double> & arr, int N_loc, int start_m) {
+    std::vector<double> vector(N_loc);
     for (int i = 0; i < N_loc; i++) {
-        vec[i] = m_b[start_m + i];
+        vector[i] = arr[start_m + i];
     }
-    return vec;
+    return vector;
 }
 
 /*
