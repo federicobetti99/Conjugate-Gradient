@@ -75,10 +75,8 @@ void CGSolver::solve(int prank,
                     p.data(), 1, 0., Ap.data(), 1);
 
         // alpha = rsold / (p' * Ap);
-        auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap.data(), 1),                                                                                                      rsold * NEARZERO);
-
+        auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap.data(), 1), rsold * NEARZERO);
         MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
         auto alpha = rsold / conj;
 
         // x = x + alpha * p;
