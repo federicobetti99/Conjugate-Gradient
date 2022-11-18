@@ -1,8 +1,0 @@
-make: Nothing to be done for `all'.
-Call CG dense on matrix size (10000 x 10000)
-[g020:mpi_rank_1][error_sighandler] Caught error: Segmentation fault (signal 11)
-srun: error: g020: task 1: Segmentation fault
-srun: Terminating job step 19162984.0
-slurmstepd: error: *** STEP 19162984.0 ON g020 CANCELLED AT 2022-11-17T13:09:40 ***
-srun: error: g020: task 0: Terminated
-srun: Force Terminated job step 19162984.0
