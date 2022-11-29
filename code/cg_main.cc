@@ -84,7 +84,7 @@ int main(int argc, char ** argv) {
     if (prank == 0) {
         // save results to file
         std::ofstream outfile;
-        outfile.open("../results/strong_scaling.txt", std::ios_base::app);
+        outfile.open("../results/sync_strong_scaling.txt", std::ios_base::app);
         outfile << psize << "," << max_time.count() << std::endl;
         outfile.close();
     } 
