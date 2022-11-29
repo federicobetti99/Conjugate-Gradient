@@ -11,8 +11,6 @@ using time_point = std::chrono::time_point<clk>;
 
 
 int main(int argc, char ** argv) {
-    MPI_Init(&argc, &argv);
-
     if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " [matrix-market-filename]"
               << std::endl;
@@ -56,19 +54,7 @@ int main(int argc, char ** argv) {
     auto t1 = clk::now();
     else solver.kerneled_solve(x_d, block_size);
     second elapsed = clk::now() - t1;
-    second max_time;
-    MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
+    std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
 
-    if (prank == 0) {
-        // save results to file
-        std::ofstream outfile;
-        outfile.open("../results/sync_strong_scaling.txt", std::ios_base::app);
-        outfile << psize << "," << max_time.count() << std::endl;
-        outfile.close();
-    } 
-
-    /// MPI: Finalize
-    MPI_Finalize();
     return 0;
 }
