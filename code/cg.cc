@@ -193,6 +193,21 @@ void CGSolver::solve(int prank,
     MPI_Gatherv(&x_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
 		&x.front(), offsets_lengths, start_rows, MPI_DOUBLE,
 		0, MPI_COMM_WORLD);
+
+    if (DEBUG) {
+        if (prank == 0) {
+            std::fill_n(r.begin(), r.size(), 0.);
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
+                        x.data(), 1, 0., r.data(), 1);
+            cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
+            auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
+                       std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
+            auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
+            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+                      << std::sqrt(rsold) << ", ||x|| = " << nx
+                      << ", ||Ax - b||/||b|| = " << res << std::endl;
+        }
+    }
 }
 
 
