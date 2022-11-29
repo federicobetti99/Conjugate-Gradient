@@ -194,6 +194,8 @@ void CGSolver::solve(int prank,
 		&x.front(), offsets_lengths, start_rows, MPI_DOUBLE,
 		0, MPI_COMM_WORLD);
 
+    std::vector<double> r(m_A.m());
+
     if (DEBUG) {
         if (prank == 0) {
             std::fill_n(r.begin(), r.size(), 0.);
