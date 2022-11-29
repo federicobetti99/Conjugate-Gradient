@@ -91,7 +91,7 @@ void CGSolver::serial_solve(std::vector<double> & x) {
         rsold = rsnew;
         if (DEBUG) {
             std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::flush;
+                      << std::sqrt(rsold) << "\r" << std::endl;
         }
     }
 

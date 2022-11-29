@@ -17,6 +17,9 @@ public:
     /// initialize source term
     void init_source_term(double h);
 
+    /// serial solver for CG
+    virtual void serial_solve(std::vector<double> & x) = 0;
+
     /// solve linear system with iterative CG
     virtual void solve(int prank,
                        int start_rows[],
@@ -55,6 +58,9 @@ public:
 
     /// get subvector for parallel computation
     std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
+    
+    /// serial solver   
+    virtual void serial_solve(std::vector<double> & x);    
 
     /// solve linear system with iterative CG
     virtual void solve(int prank, 

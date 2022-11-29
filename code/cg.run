@@ -7,10 +7,11 @@ module load mvapich2
 
 make
 
-rm strong_scaling.txt
+rm ../results/strong_scaling.txt
 
 srun -n 1 cgsolver  lap2D_5pt_n100.mtx
 srun -n 2 cgsolver  lap2D_5pt_n100.mtx
 srun -n 4 cgsolver  lap2D_5pt_n100.mtx
 srun -n 8 cgsolver  lap2D_5pt_n100.mtx
-srun -n 16 cgsolver lap2D_5pt_n100.mtx
+srun -n 12 cgsolver lap2D_5pt_n100.mtx
+srun -n 14 cgsolver lap2D_5pt_n100.mtx
