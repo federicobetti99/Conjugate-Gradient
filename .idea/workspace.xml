@@ -8,8 +8,10 @@
   <component name="ChangeListManager">
     <list default="true" id="3265c88e-54d8-470d-ba6e-309fa6bb2a4c" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/cg.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/cg_main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/slurm-19343475.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/slurm-19343479.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/slurm-19343487.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/strong_scaling.txt" beforeDir="false" afterPath="$PROJECT_DIR$/results/strong_scaling.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,6 +43,11 @@
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
   </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Federico Betti\Documents\GitHub\Conjugate-Gradient-MPI\results" />
+    </key>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -53,6 +60,7 @@
       <workItem from="1668433276859" duration="3476000" />
       <workItem from="1668437670458" duration="1000" />
       <workItem from="1668673018348" duration="968000" />
+      <workItem from="1669706168618" duration="1074000" />
     </task>
     <servers />
   </component>
