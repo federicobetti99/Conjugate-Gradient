@@ -10,11 +10,14 @@
 
 /* -------------------------------------------------------------------------- */
 __global__ void matrix_vector_product(Matrix A, std::vector<double> & p, std::vector<double> & Ap) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    // send i-th row of the matrix to the shared memory, should fit in
+    int i = blockIdx.x;
+    __shared__ float tile(A.n(), 1);
 
-    // do scalar product between i-th row and P to get (Ap)_i
+    for (int j = 0; j < A.n(); ++j) {
+	tile(j) = A(i, j);
+    }
 
-    // reconstruct Ap total vector inside
-
+    __synchtreads();
+    int j = threadIdx.x;
+    Ap(j) += tile(j) * p(j); 
 }

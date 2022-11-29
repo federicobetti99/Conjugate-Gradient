@@ -1,7 +1,6 @@
 #include "cg.hh"
 #include <chrono>
 #include <iostream>
-#include <mpi.h>
 #include <fstream>
 #include <cuda_runtime.h>
 
@@ -9,13 +8,12 @@ using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
+static void usage(const std::string & prog_name) {
+  std::cerr << prog_name << " <grid_size> <block_size [default: 32]>" << std::endl;
+  exit(0);
+}
 
 int main(int argc, char ** argv) {
-    if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " [matrix-market-filename]"
-              << std::endl;
-    return 1;
-    }
 
     dim3 block_size;
     if (argc >= 2) {
@@ -40,7 +38,6 @@ int main(int argc, char ** argv) {
 
     // get size of the matrix
     int n = solver.n();
-    int m = solver.m();
 
     // initialize global source term
     double h = 1. / n;
@@ -52,9 +49,9 @@ int main(int argc, char ** argv) {
 
     // solve and print statistics
     auto t1 = clk::now();
-    else solver.kerneled_solve(x_d, block_size);
+    solver.kerneled_solve(x_d, block_size);
     second elapsed = clk::now() - t1;
-    std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
+    std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
     return 0;
 }

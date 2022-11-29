@@ -3,7 +3,7 @@
 #include <cblas.h>
 #include <string>
 #include <vector>
-#include <mpi.h> 
+#include "cuda_runtime.h" 
 
 #ifndef __CG_HH__
 #define __CG_HH__
@@ -21,7 +21,7 @@ public:
     virtual void solve(std::vector<double> & x) = 0;
 
     /// solve linear system with iterative CG
-    virtual void kerneled_solve(std::vector<double> & x) = 0;
+    virtual void kerneled_solve(std::vector<double> & x, dim3 block_size) = 0;
 
     /// initialize size of the matrix (in this case m = n)
     inline int m() const { return m_m; }
@@ -60,7 +60,7 @@ public:
     virtual void solve(std::vector<double> & x);
 
     /// solve linear system with iterative CG
-    virtual void kerneled_solve(std::vector<double> & x);
+    virtual void kerneled_solve(std::vector<double> & x, dim3 block_size);
 
 private:
     /// finite element matrix
