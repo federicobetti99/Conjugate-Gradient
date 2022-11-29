@@ -89,10 +89,10 @@ void CGSolver::serial_solve(std::vector<double> & x) {
 
         // rsold = rsnew;
         rsold = rsnew;
-        if (DEBUG) {
-            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::endl;
-        }
+        // if (DEBUG) {
+        //    std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+        //              << std::sqrt(rsold) << "\r" << std::endl;
+        // }
     }
 
     if (DEBUG) {
