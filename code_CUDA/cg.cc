@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <cuda_runtime.h>
+#include "poisson_gpu.cu"
 
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
@@ -113,7 +114,7 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
     std::vector<double> tmp(m_n);
 
     dim3 grid_size;
-    grid_size.x = m_n/block_size.x;
+    grid_size.x = m_m/block_size.x;
     grid_size.y = m_n/block_size.y;
 
     // r = b - A * x;
@@ -135,8 +136,7 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
     for (; k < m_n; ++k) {
         // Ap = A * p;
         std::fill_n(Ap.begin(), Ap.size(), 0.);
-
-        matrix_vector_product<<<grid_size, block_size>>>(A, p, Ap);
+        matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
@@ -146,7 +146,7 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
         // x = x + alpha * p;
         vector_sum<<<grid_size, block_size>>>(x, alpha, p);
         // r = r - alpha * Ap;
-        vector_sum<<<grid_size, block_size>>>(r, -alpha, p);
+        vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
 
         cudaDeviceSynchronize();
 
@@ -173,7 +173,7 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
         std::fill_n(r.begin(), r.size(), 0.);
         matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);
         cudaDeviceSynchronize();
-        vector_sum<<<grid_size, block_size>>>(r, -1.0, b);
+        vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);
         auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
                    std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
         auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
