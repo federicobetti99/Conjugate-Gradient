@@ -89,10 +89,6 @@ void CGSolver::serial_solve(std::vector<double> & x) {
 
         // rsold = rsnew;
         rsold = rsnew;
-        // if (DEBUG) {
-        //    std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-        //              << std::sqrt(rsold) << "\r" << std::endl;
-        // }
     }
 
     if (DEBUG) {
@@ -123,19 +119,24 @@ void CGSolver::solve(int prank,
     int N_loc = A_sub.m();
     std::vector<double> Ap(N_loc);
     std::vector<double> tmp_sub(N_loc);
+
+    /// rank dependent variables
+    // compute subparts of solution and residual
     std::vector<double> r_sub = this->get_subvector(this->m_b, offsets_lengths[prank], start_rows[prank]);
     std::vector<double> x_sub = this->get_subvector(x,         offsets_lengths[prank], start_rows[prank]); 
 
+    /// compute residual
     // r = b - A * x;
     std::fill_n(Ap.begin(), Ap.size(), 0.);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, A_sub.n(), 1., A_sub.data(), x.size(),
                 x.data(), 1, 0., Ap.data(), 1);
-
     cblas_daxpy(r_sub.size(), -1., Ap.data(), 1, r_sub.data(), 1);
 
+    /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
     std::vector<double> p = this->m_b;
 
+    /// MPI: compute residual rank-wise and reduce
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
     MPI_Allreduce(MPI_IN_PLACE, &rsold, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
@@ -143,33 +144,39 @@ void CGSolver::solve(int prank,
     int k = 0;
     for (; k < m_n; ++k) {
 
-        /// MPI: we need to gather p in the end to compute this matrix-vector product at every iteration
+        /// MPI: gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
         std::fill_n(Ap.begin(), Ap.size(), 0.);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, p.size(), 1., A_sub.data(), p.size(),
                     p.data(), 1, 0., Ap.data(), 1);
 
+        /// MPI: compute denominator for optimal step size rank-wise and reduce in-place
         // alpha = rsold / (p' * Ap);
         auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap.data(), 1), rsold * NEARZERO);
         MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         auto alpha = rsold / conj;
 
+        /// MPI: compute update of x_sub rank-wise
         // x = x + alpha * p;
         cblas_daxpy(x_sub.size(), alpha, p_sub.data(), 1, x_sub.data(), 1);
 
+        /// MPI: compute residual rank-wise
         // r = r - alpha * Ap;
         cblas_daxpy(r_sub.size(), -alpha, Ap.data(), 1, r_sub.data(), 1);
 
+        /// MPI: compute new residual norm rank-wise and reduce in-place
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
-
         MPI_Allreduce(MPI_IN_PLACE, &rsnew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);       
-        
-        if (std::sqrt(rsnew) < m_tolerance)
-            break; // Convergence test
 
+        // check convergence with overall residual, not rank-wise
+        if (std::sqrt(rsnew) < m_tolerance)
+            break;
+
+        // compute ratio between overall residuals
         auto beta = rsnew / rsold;
 
+        /// MPI: update p rank-wise
         // p = r + (rsnew / rsold) * p;
         tmp_sub = r_sub;
         cblas_daxpy(p_sub.size(), beta, p_sub.data(), 1, tmp_sub.data(), 1);
@@ -178,7 +185,7 @@ void CGSolver::solve(int prank,
         // rsold = rsnew;
         rsold = rsnew;
 
-        /// collective communication: gather p_sub in a global vector p from all ranks to all ranks
+        /// MPI collective communication: gather p_sub in a global vector p from all ranks to all ranks
         MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
 		       &p.front(), offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
     }
@@ -188,6 +195,7 @@ void CGSolver::solve(int prank,
 		&x.front(), offsets_lengths, start_rows, MPI_DOUBLE,
 		0, MPI_COMM_WORLD);
 
+    // check overall residual norm at the end
     std::vector<double> r(m_A.m());
 
     if (DEBUG) {
