@@ -6,12 +6,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3265c88e-54d8-470d-ba6e-309fa6bb2a4c" name="Changes" comment="">
+    <list default="true" id="e204731e-883a-41f3-b31f-c9d545e4ec4e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/plots.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/results/sync_strong_scaling.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/slurm-19343475.out" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/slurm-19343479.out" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/slurm-19343487.out" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/strong_scaling.txt" beforeDir="false" afterPath="$PROJECT_DIR$/results/strong_scaling.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/results/strong_scaling.txt" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,40 +26,32 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="2HXLjVEqARrE6RBDuAgFRHwb57q" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectId" id="2IDKeSHZerKzEjNZfW1FPnVUtgc" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
-    <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
   </component>
-  <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\Federico Betti\Documents\GitHub\Conjugate-Gradient-MPI\results" />
-    </key>
-  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="3265c88e-54d8-470d-ba6e-309fa6bb2a4c" name="Changes" comment="" />
-      <created>1668426619295</created>
+      <changelist id="e204731e-883a-41f3-b31f-c9d545e4ec4e" name="Changes" comment="" />
+      <created>1669710811880</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1668426619295</updated>
-      <workItem from="1668426621775" duration="1114000" />
-      <workItem from="1668433276859" duration="3476000" />
-      <workItem from="1668437670458" duration="1000" />
-      <workItem from="1668673018348" duration="968000" />
-      <workItem from="1669706168618" duration="1074000" />
+      <updated>1669710811880</updated>
+      <workItem from="1669710814892" duration="71000" />
     </task>
     <servers />
   </component>
@@ -77,5 +68,8 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
 </project>
