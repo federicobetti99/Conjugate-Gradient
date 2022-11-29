@@ -21,3 +21,9 @@ __global__ void matrix_vector_product(Matrix A, std::vector<double> & p, std::ve
     int j = threadIdx.x;
     Ap(j) += tile(j) * p(j); 
 }
+
+
+__global__ void vector_sum(std::vector<double> & a, double alpha, std::vector<double> &b) {
+    int i = blockIdx.x;
+    a[i] = a[i] + alpha * b[i];
+}

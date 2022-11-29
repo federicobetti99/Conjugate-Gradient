@@ -144,10 +144,11 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
                                       rsold * NEARZERO);
 
         // x = x + alpha * p;
-        cblas_daxpy(m_n, alpha, p.data(), 1, x.data(), 1);
-
+        vector_sum<<<grid_size, block_size>>>(x, alpha, p);
         // r = r - alpha * Ap;
-        cblas_daxpy(m_n, -alpha, Ap.data(), 1, r.data(), 1);
+        vector_sum<<<grid_size, block_size>>>(r, -alpha, p);
+
+        cudaDeviceSynchronize();
 
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
@@ -160,7 +161,8 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
         auto beta = rsnew / rsold;
         // p = r + (rsnew / rsold) * p;
         tmp = r;
-        cblas_daxpy(m_n, beta, p.data(), 1, tmp.data(), 1);
+        vector_sum<<<grid_size, block_size>>>(r, beta, p);
+        cudaDeviceSynchronize();
         p = tmp;
 
         // rsold = rsnew;
@@ -169,9 +171,9 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
 
     if (DEBUG) {
         std::fill_n(r.begin(), r.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                    x.data(), 1, 0., r.data(), 1);
-        cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
+        matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);
+        cudaDeviceSynchronize();
+        vector_sum<<<grid_size, block_size>>>(r, -1.0, b);
         auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
                    std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
         auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
