@@ -151,6 +151,9 @@ void CGSolver::solve(int prank,
 
         // alpha = rsold / (p' * Ap);
         auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap.data(), 1), rsold * NEARZERO);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
         MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         auto alpha = rsold / conj;
 
@@ -162,6 +165,9 @@ void CGSolver::solve(int prank,
 
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
         MPI_Allreduce(MPI_IN_PLACE, &rsnew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);       
         
         if (std::sqrt(rsnew) < m_tolerance)
@@ -176,6 +182,8 @@ void CGSolver::solve(int prank,
 
         // rsold = rsnew;
         rsold = rsnew;
+
+        MPI_Barrier(MPI_COMM_WORLD);
 
         /// collective communication: gather p_sub in a global vector p from all ranks to all ranks
         MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
