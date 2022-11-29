@@ -6,9 +6,37 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e204731e-883a-41f3-b31f-c9d545e4ec4e" name="Changes" comment="Removed debug barriers">
+    <list default="true" id="f8e54185-113c-4531-af24-d927d9f28236" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/code_CUDA/poisson_gpu.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Conjugate-Gradient-MPI.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/cg.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/cg.cc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/cg.hh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/cg.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/cg.run" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/cg_main.cc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/cg_main.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/cgsolver" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/lap2D_5pt_n100.mtx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/matrix.cc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/matrix.hh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/matrix.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/matrix_coo.cc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/matrix_coo.hh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/matrix_coo.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/mmio.c" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/mmio.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/mmio.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/perf.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.hh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg_main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/perf.zip" beforeDir="false" afterPath="$PROJECT_DIR$/results/perf.zip" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_MPI/perf.zip" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,7 +60,7 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="2IDKeSHZerKzEjNZfW1FPnVUtgc" />
+  <component name="ProjectId" id="2IDS9T5mA96pDDuKTCDA5xmlsLi" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
@@ -49,25 +77,21 @@
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
   </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Federico Betti\Documents\GitHub\Conjugate-Gradient-MPI\results" />
+    </key>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="e204731e-883a-41f3-b31f-c9d545e4ec4e" name="Changes" comment="" />
-      <created>1669710811880</created>
+      <changelist id="f8e54185-113c-4531-af24-d927d9f28236" name="Changes" comment="" />
+      <created>1669714510663</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1669710811880</updated>
-      <workItem from="1669710814892" duration="71000" />
-      <workItem from="1669711036435" duration="2510000" />
+      <updated>1669714510663</updated>
+      <workItem from="1669714512912" duration="1111000" />
     </task>
-    <task id="LOCAL-00001" summary="Removed debug barriers">
-      <created>1669712786021</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1669712786021</updated>
-    </task>
-    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -86,7 +110,5 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="Removed debug barriers" />
-    <option name="LAST_COMMIT_MESSAGE" value="Removed debug barriers" />
   </component>
 </project>
