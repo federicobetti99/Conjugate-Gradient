@@ -74,15 +74,18 @@ int main(int argc, char ** argv) {
     // solve and print statistics
     std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
-    solver.solve(prank, start_rows, offsets_lengths, x_d);
+    if (psize == 1) solver.serial_solve(x_d);
+    else solver.solve(prank, start_rows, offsets_lengths, x_d);
     second elapsed = clk::now() - t1;
-    std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
-
-    second max_time;                                                                                                                                              MPI_Reduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    second max_time;
+    MPI_Reduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
 
     if (prank == 0) {
-	// save results to file
-	std::ofstream outfile;                                                                                                                                        outfile.open("strong_scaling.txt", std::ios_base::app);                                                                                                       outfile << psize << "," << max_time.count() << std::endl;
+        // save results to file
+        std::ofstream outfile;
+        outfile.open("strong_scaling.txt", std::ios_base::app);
+        outfile << psize << "," << max_time.count() << std::endl;
         outfile.close();
     } 
 
