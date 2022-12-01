@@ -7,8 +7,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fc0cf745-4f4f-4bef-8148-1a74ef62d56f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.hh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,6 +49,7 @@
       <updated>1669895065101</updated>
       <workItem from="1669895067583" duration="4000" />
       <workItem from="1669895080752" duration="1046000" />
+      <workItem from="1669919887288" duration="1000" />
     </task>
     <servers />
   </component>
