@@ -26,8 +26,8 @@ __global__ void vector_sum(std::vector<double> & a, double alpha, std::vector<do
     a[i] = a[i] + alpha * b[i];
 }
 
-void CGSolver::cg_step_kernel(std::vector<double> & Ap, std::vector<double> & p, auto rsold,
-                              dim3 grid_size, dim3 block_size) {
+void CGSolver::cg_step_kernel(std::vector<double> & Ap, std::vector<double> & p, std::vector<double> & x,
+                              auto rsold, dim3 grid_size, dim3 block_size) {
     // Ap = A * p;
     std::fill_n(Ap.begin(), Ap.size(), 0.);
     matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);

@@ -34,8 +34,8 @@ protected:
     
     virtual void kerneled_solve(std::vector<double> & x, dim3 block_size) = 0;
 
-    virtual double cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, double rsold,
-                                  dim3 grid_size, dim3 block_size) = 0;
+    virtual double cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, std::vector<double> & x,
+                                  double rsold, dim3 grid_size, dim3 block_size) = 0;
 
     /// right hand side
     std::vector<double> m_b;
@@ -64,8 +64,8 @@ protected:
     /// solve linear system with iterative CG
     virtual void kerneled_solve(std::vector<double> & x, dim3 block_size);
 
-    virtual double cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, double rsold,
-                                  dim3 grid_size, dim3 block_size);
+    virtual double cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, std::vector<double> & x,
+                                  double rsold, dim3 grid_size, dim3 block_size);
 
 private:
     /// finite element matrix
