@@ -10,7 +10,7 @@ all: cgsolver
 cgsolver: $(OBJS)
 	$(LD) -o $@ $(OBJS) $(LDFLAGS)
 
-%.o:%.cu
+cg_gpu.o: cg_gpu.cu
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
