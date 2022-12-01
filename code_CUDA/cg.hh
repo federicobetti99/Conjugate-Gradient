@@ -34,6 +34,8 @@ protected:
     
     virtual void kerneled_solve(std::vector<double> & x, dim3 block_size) = 0;
 
+    virtual auto cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, auto rsold) = 0;
+
     /// right hand side
     std::vector<double> m_b;
 
@@ -60,6 +62,8 @@ public:
 protected:
     /// solve linear system with iterative CG
     virtual void kerneled_solve(std::vector<double> & x, dim3 block_size);
+
+    virtual auto cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, auto rsold);
 
 private:
     /// finite element matrix
