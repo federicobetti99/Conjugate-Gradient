@@ -3,6 +3,7 @@
 #include <cblas.h>
 #include <cmath>
 #include <iostream>
+#include <cuda_runtime.h> 
 
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;

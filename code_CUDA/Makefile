@@ -7,6 +7,9 @@ OBJS=cg_main.o cg.o matrix.o matrix_coo.o mmio.o
 
 all: cgsolver
 
+%.o:%.cu
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 cgsolver: $(OBJS)
 	$(LD) -o $@ $(OBJS) $(LDFLAGS)
 

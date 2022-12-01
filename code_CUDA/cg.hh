@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <cuda_runtime.h> 
-#include "poisson_gpu.cu" 
 
 #ifndef __CG_HH__
 #define __CG_HH__
@@ -21,9 +20,6 @@ public:
     /// serial solver for CG
     virtual void solve(std::vector<double> & x) = 0;
 
-    /// solve linear system with iterative CG
-    virtual void kerneled_solve(std::vector<double> & x, dim3 block_size) = 0;
-
     /// initialize size of the matrix (in this case m = n)
     inline int m() const { return m_m; }
     inline int n() const { return m_n; }
@@ -35,6 +31,8 @@ protected:
     /// initialize m and n
     int m_m{0};
     int m_n{0};
+    
+    virtual void kerneled_solve(std::vector<double> & x, dim3 block_size) = 0;
 
     /// right hand side
     std::vector<double> m_b;
@@ -59,7 +57,7 @@ public:
     
     /// serial solver   
     virtual void solve(std::vector<double> & x);
-
+protected:
     /// solve linear system with iterative CG
     virtual void kerneled_solve(std::vector<double> & x, dim3 block_size);
 
