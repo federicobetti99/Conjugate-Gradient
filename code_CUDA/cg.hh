@@ -28,18 +28,18 @@ public:
     /// prescribe residual tolerance for ending of the algorithm
     void tolerance(double tolerance) { m_tolerance = tolerance; }
 
+    virtual void kerneled_solve(double *x, dim3 block_size) = 0;
+
+    virtual std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double *x,
+                                                    double rsold, dim3 grid_size, dim3 block_size) = 0;
+
 protected:
     /// initialize m and n
     int m_m{0};
     int m_n{0};
-    
-    virtual void kerneled_solve(std::vector<double> & x, dim3 block_size) = 0;
-
-    virtual std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
-                                  double rsold, dim3 grid_size, dim3 block_size) = 0;
 
     /// right hand side
-    std::vector<double> m_b;
+    double* m_b;
 
     /// residual tolerance
     double m_tolerance{1e-10};
@@ -61,9 +61,9 @@ public:
     
     /// serial solver   
     virtual void solve(std::vector<double> & x);
-protected:
+
     /// solve linear system with iterative CG
-    virtual void kerneled_solve(std::vector<double> & x, dim3 block_size);
+    virtual void kerneled_solve(double *x, dim3 block_size);
 
     virtual std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
                                   double rsold, dim3 grid_size, dim3 block_size);

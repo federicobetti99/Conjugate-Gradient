@@ -44,8 +44,7 @@ int main(int argc, char ** argv) {
     solver.init_source_term(h);
 
     // initialize solution vector
-    std::vector<double> x_d(n);
-    std::fill(x_d.begin(), x_d.end(), 0.);
+    double *x_d;
 
     // solve and print statistics
     auto t1 = clk::now();

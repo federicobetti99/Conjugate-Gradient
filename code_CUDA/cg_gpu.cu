@@ -7,12 +7,12 @@
 #include <exception>
 /* -------------------------------------------------------------------------- */
 const double NEARZERO = 1.0e-14;
-
+const bool DEBUG = true;
 /* -------------------------------------------------------------------------- */
 __global__ void matrix_vector_product(Matrix A, double* p, double* Ap) {
     int i = blockIdx.x;
     int j = threadIdx.x;
-    // Ap[j] = A(i, j); // * p[j]; 
+    Ap[j] = A(i, j) * p[j]; 
 }
 
 __global__ void vector_sum(double* a, double alpha, double* b) {
@@ -25,8 +25,8 @@ __global__ void scalar_product(double * a, double * b, double result) {
     result += a[i]*b[i];
 }
 
-void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
-    double *r, *p, *Ap, **tmp;
+void CGSolver::kerneled_solve(double *x, dim3 block_size) {
+    double *r, *p, *Ap, *tmp;
     cudaMallocManaged(&r, m_n * sizeof(double));
     cudaMallocManaged(&p, m_n * sizeof(double));
     cudaMallocManaged(&Ap, m_n * sizeof(double));
