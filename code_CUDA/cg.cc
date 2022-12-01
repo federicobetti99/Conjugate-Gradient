@@ -132,7 +132,7 @@ void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
-        auto rsnew = cg_step_kernel(Ap, p, rsold);
+        auto rsnew = cg_step_kernel(Ap, p, rsold, grid_size, block_size);
         // rsold = rsnew;
         rsold = rsnew;
     }
