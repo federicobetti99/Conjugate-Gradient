@@ -3,8 +3,6 @@
 #include <cblas.h>
 #include <cmath>
 #include <iostream>
-#include <cuda_runtime.h>
-#include "poisson_gpu.cu"
 
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;

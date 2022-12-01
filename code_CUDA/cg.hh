@@ -3,7 +3,8 @@
 #include <cblas.h>
 #include <string>
 #include <vector>
-#include "cuda_runtime.h" 
+#include <cuda_runtime.h> 
+#include "poisson_gpu.cu" 
 
 #ifndef __CG_HH__
 #define __CG_HH__
