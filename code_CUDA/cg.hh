@@ -3,6 +3,7 @@
 #include <cblas.h>
 #include <string>
 #include <vector>
+#include <tuple>
 #include <cuda_runtime.h> 
 
 #ifndef __CG_HH__
@@ -34,7 +35,7 @@ protected:
     
     virtual void kerneled_solve(std::vector<double> & x, dim3 block_size) = 0;
 
-    virtual double cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, std::vector<double> & x,
+    virtual std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
                                   double rsold, dim3 grid_size, dim3 block_size) = 0;
 
     /// right hand side
@@ -64,7 +65,7 @@ protected:
     /// solve linear system with iterative CG
     virtual void kerneled_solve(std::vector<double> & x, dim3 block_size);
 
-    virtual double cg_step_kernel(std::vector<double> & Ap, std::vector<double> p, std::vector<double> & x,
+    virtual std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
                                   double rsold, dim3 grid_size, dim3 block_size);
 
 private:

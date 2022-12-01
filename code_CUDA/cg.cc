@@ -106,49 +106,57 @@ void CGSolver::solve(std::vector<double> & x) {
 }
 
 void CGSolver::kerneled_solve(std::vector<double> & x, dim3 block_size) {
-    std::vector<double> r(m_n);
-    std::vector<double> p(m_n);
-    std::vector<double> Ap(m_n);
-    std::vector<double> tmp(m_n);
+    double *r, *p, *Ap, **tmp;
+    cudaMallocManaged(&r, m_n * sizeof(double));
+    cudaMallocManaged(&p, m_n * sizeof(double));
+    cudaMallocManaged(&Ap, m_n * sizeof(double));
+    cudaMallocManaged(&tmp, m_n * sizeof(double));
 
     dim3 grid_size;
     grid_size.x = m_m/block_size.x;
     grid_size.y = m_n/block_size.y;
 
     // r = b - A * x;
-    std::fill_n(Ap.begin(), Ap.size(), 0.);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                x.data(), 1, 0., Ap.data(), 1);
+    matrix_vector_product<<<grid_size, block_size>>>(m_A, x, Ap);
 
     r = m_b;
-    cblas_daxpy(m_n, -1., Ap.data(), 1, r.data(), 1);
-
+    vector_sum<<<grid_size, block_size>>>(r, -1., Ap);                                                                                                                                                             
     // p = r;
     p = r;
 
     // rsold = r' * r;
-    auto rsold = cblas_ddot(m_n, r.data(), 1, p.data(), 1);
+    double rsold = 0.;
+    scalar_product<<<grid_size, block_size>>>(r, p, rsold);
 
     // for i = 1:length(b)
+    bool conv;
+    double rsnew = 0.;
     int k = 0;
     for (; k < m_n; ++k) {
-        auto rsnew = cg_step_kernel(Ap, p, rsold, grid_size, block_size);
+        std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);
         // rsold = rsnew;
+        if (conv == true) break;
         rsold = rsnew;
     }
 
     if (DEBUG) {
-        std::fill_n(r.begin(), r.size(), 0.);
         matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);
         cudaDeviceSynchronize();
         vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);
-        auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
-                   std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
-        auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
+        scalar_product<<<grid_size, block_size>>>(r, r, rsold);
+        scalar_product<<<grid_size, block_size>>>(m_b, m_b, rsnew);
+        auto res = rsold/rsnew;
+        double norm_x = 0.;
+        scalar_product<<<grid_size, block_size>>>(x, x, norm_x);
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << nx
+                  << std::sqrt(rsold) << ", ||x|| = " << norm_x
                   << ", ||Ax - b||/||b|| = " << res << std::endl;
     }
+
+    cudaFree(&r);
+    cudaFree(&tmp);
+    cudaFree(&p);
+    cudaFree(&Ap);
 }
 
 void CGSolver::read_matrix(const std::string & filename) {

@@ -6,59 +6,61 @@
 #include <iostream>
 #include <exception>
 /* -------------------------------------------------------------------------- */
+const double NEARZERO = 1.0e-14;
 
 /* -------------------------------------------------------------------------- */
-__global__ void matrix_vector_product(Matrix A, std::vector<double> & p, std::vector<double> & Ap) {
+__global__ void matrix_vector_product(Matrix A, double* p, double* Ap) {
     int i = blockIdx.x;
-    __shared__ float tile[A.n()];
-
-    for (int j = 0; j < A.n(); ++j) {
-	tile[j] = A(i, j);
-    }
-
-    __synchtreads();
     int j = threadIdx.x;
-    Ap(j) += tile[j] * p(j); 
+    // Ap[j] = A(i, j); // * p[j]; 
 }
 
-__global__ void vector_sum(std::vector<double> & a, double alpha, std::vector<double> & b) {
+__global__ void vector_sum(double* a, double alpha, double* b) {
     int i = blockIdx.x;
     a[i] = a[i] + alpha * b[i];
 }
 
-void CGSolver::cg_step_kernel(std::vector<double> & Ap, std::vector<double> & p, std::vector<double> & x,
-                              auto rsold, dim3 grid_size, dim3 block_size) {
+__global__ void scalar_product(double * a, double * b, double result) {
+    int i = blockIdx.x;
+    result += a[i]*b[i];
+}  
+
+std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
+                              double rsold, dim3 grid_size, dim3 block_size) {
     // Ap = A * p;
-    std::fill_n(Ap.begin(), Ap.size(), 0.);
+    bool conv = false;
     matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
     cudaDeviceSynchronize();
 
     // alpha = rsold / (p' * Ap);
-    auto alpha = rsold / std::max(cblas_ddot(m_n, p.data(), 1, Ap.data(), 1),
-                                  rsold * NEARZERO);
+    double conj = 0.;
+    scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
+    cudaDeviceSynchronize();
+    auto alpha = rsold / std::max(conj, rsold * NEARZERO);
 
     // x = x + alpha * p;
     vector_sum<<<grid_size, block_size>>>(x, alpha, p);
     // r = r - alpha * Ap;
     vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
-
     cudaDeviceSynchronize();
 
     // rsnew = r' * r;
-    auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
+    double rsnew = 0.;
+    scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
+    cudaDeviceSynchronize();
 
     // if sqrt(rsnew) < 1e-10
     //   break;
     if (std::sqrt(rsnew) < m_tolerance)
-        break; // Convergence test
+        conv = true; // Convergence test
 
     auto beta = rsnew / rsold;
     // p = r + (rsnew / rsold) * p;
-    tmp = r;
-    vector_sum<<<grid_size, block_size>>>(r, beta, p);
+    double * tmp = r;
+    vector_sum<<<grid_size, block_size>>>(p, beta, tmp);
     cudaDeviceSynchronize();
     p = tmp;
 
-    return rsnew;
+    return std::make_tuple(rsnew, conv);
 }
 
