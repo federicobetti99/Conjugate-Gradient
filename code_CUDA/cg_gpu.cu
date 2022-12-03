@@ -55,7 +55,7 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     for (; k < m_n; ++k) {
         std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);
         // rsold = rsnew;
-        if (conv == true) break;
+        if conv break;
         rsold = rsnew;
     }
 
@@ -109,11 +109,9 @@ std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double*
         conv = true; // Convergence test
 
     auto beta = rsnew / rsold;
-    // p = r + (rsnew / rsold) * p;
-    double * tmp = r;
-    vector_sum<<<grid_size, block_size>>>(p, beta, tmp);
+    // p = r + (rsnew / rsold) * p
+    vector_sum<<<grid_size, block_size>>>(p, beta, r);
     cudaDeviceSynchronize();
-    p = tmp;
 
     return std::make_tuple(rsnew, conv);
 }
