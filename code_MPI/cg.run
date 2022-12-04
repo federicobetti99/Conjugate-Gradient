@@ -1,18 +1,16 @@
 #!/bin/bash
+#SBATCH --nodes=2
 #SBATCH --account=math-454
+#SBATCH --reservation=Course-math-454-week
 
 module purge
 module load gcc openblas
 module load mvapich2
-
-make
-
-rm ../results/sync_strong_scaling.txt
-
+                                                                                                                                                              
 srun -n 1 cgsolver lap2D_5pt_n100.mtx
 srun -n 2 cgsolver lap2D_5pt_n100.mtx
 srun -n 4 cgsolver lap2D_5pt_n100.mtx
 srun -n 8 cgsolver lap2D_5pt_n100.mtx
 srun -n 16 cgsolver lap2D_5pt_n100.mtx
 srun -n 32 cgsolver lap2D_5pt_n100.mtx
-srun -n 64 cgsolver lap2D_5pt_n100.mtx
+srun -n 56 cgsolver lap2D_5pt_n100.mtx                                                                                                                                                                         
