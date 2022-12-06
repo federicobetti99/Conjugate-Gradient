@@ -422,7 +422,7 @@ MatrixCOO CGSolverSparse::get_submatrix(int N_loc, int start_m) {
         auto i = this->m_A.irn[z];
         auto j = this->m_A.jcn[z];
         auto a_ = this->m_A.a[z];
-        if (i > start_m && i < start_m + N_loc) {
+        if (i >= start_m && i < start_m + N_loc) {
             submatrix.a.push_back(a_);
             submatrix.irn.push_back(i);
             submatrix.jcn.push_back(j);
