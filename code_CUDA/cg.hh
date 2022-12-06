@@ -18,9 +18,6 @@ public:
     /// initialize source term
     void init_source_term(double h);
 
-    /// serial solver for CG
-    virtual void serial_solve(std::vector<double> & x) = 0;
-
     /// parallel solver for CG
     virtual void solve(double *x, dim3 block_size) = 0;
 
@@ -61,9 +58,6 @@ public:
 
     /// get subvector for parallel computation
     std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
-    
-    /// serial solver   
-    virtual void serial_solve(std::vector<double> & x);
 
     /// solve linear system with iterative CG
     virtual void solve(double* x, dim3 block_size);
@@ -86,9 +80,6 @@ public:
 
     /// read matrix from .mtx file
     virtual void read_matrix(const std::string & filename);
-
-    /// solve linear system with iterative CG
-    virtual void serial_solve(std::vector<double> & x);
 
 private:
     /// finite element matrix
