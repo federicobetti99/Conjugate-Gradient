@@ -9,27 +9,27 @@ using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
 
-void partition_matrix(int N, int psize, int start_rows[], int offsets_lengths[])
+void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
 {
     if (psize == 1)
     {
         start_rows[0] = 0;
-        offsets_lengths[0] = N;
+        num_rows[0] = N;
     }
     else
     {
         int N_loc = N / psize;
         start_rows[0] = 0;
-        offsets_lengths[0] = N_loc;
+        num_rows[0] = N_loc;
         int i0 = N_loc;
         for(int prank = 1; prank < psize-1; prank++)
         {
             start_rows[prank] = i0;
-            offsets_lengths[prank] = N_loc;
+            num_rows[prank] = N_loc;
             i0 += N_loc;
         }
         start_rows[psize-1] = i0;
-        offsets_lengths[psize-1] = N - i0;
+        num_rows[psize-1] = N - i0;
     }
 }
 
@@ -60,8 +60,8 @@ int main(int argc, char ** argv) {
     int *start_rows;
     start_rows = new int [psize];
     int *offsets_lengths;
-    offsets_lengths = new int [psize];
-    partition_matrix(m, psize, start_rows, offsets_lengths);
+    num_rows = new int [psize];
+    partition_matrix(m, psize, start_rows, num_rows);
 
     // initialize global source term
     double h = 1. / n;
@@ -75,7 +75,7 @@ int main(int argc, char ** argv) {
     if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
     if (psize == 1) solver.serial_solve(x_d);
-    else solver.solve(prank, start_rows, offsets_lengths, x_d);
+    else solver.solve(prank, start_rows, num_rows, x_d);
     second elapsed = clk::now() - t1;
     second max_time;
     MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
