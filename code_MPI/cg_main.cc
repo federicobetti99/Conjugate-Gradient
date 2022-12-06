@@ -30,6 +30,8 @@ void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
         }
         start_rows[psize-1] = i0;
         num_rows[psize-1] = N - i0;
+        for(int prank = 0; prank < psize; prank++)                                                                                                                    {
+            std::cout << prank << ": " << start_rows[prank] << ", " << num_rows[prank] << std::endl;                                                                  }    
     }
 }
 
@@ -58,7 +60,7 @@ int main(int argc, char ** argv) {
     /// MPI: domain decomposition along rows
     int *start_rows;
     start_rows = new int [psize];
-    int *offsets_lengths;
+    int *num_rows;
     num_rows = new int [psize];
     partition_matrix(m, psize, start_rows, num_rows);
 
@@ -71,22 +73,14 @@ int main(int argc, char ** argv) {
     std::fill(x_d.begin(), x_d.end(), 0.);
 
     // solve and print statistics
-    if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
+    std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
     if (psize == 1) solver.serial_solve(x_d);
     else solver.solve(start_rows, num_rows, x_d);
     second elapsed = clk::now() - t1;
     second max_time;
     MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
-
-    if (prank == 0) {
-        // save results to file
-        std::ofstream outfile;
-        outfile.open("../results/sync_strong_scaling.txt", std::ios_base::app);
-        outfile << psize << "," << max_time.count() << std::endl;
-        outfile.close();
-    } 
+    std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n"; 
 
     /// MPI: Finalize
     MPI_Finalize();
