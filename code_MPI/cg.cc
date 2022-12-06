@@ -418,7 +418,7 @@ void CGSolverSparse::solve(int start_rows[],
 
 MatrixCOO CGSolverSparse::get_submatrix(int N_loc, int start_m) {
     MatrixCOO submatrix;
-    for (size_t z = 0; z < this->m_A.nz(); ++z) {
+    for (int z = 0; z < this->m_A.nz(); ++z) {
         auto i = this->m_A.irn[z];
         auto j = this->m_A.jcn[z];
         auto a_ = this->m_A.a[z];
