@@ -55,7 +55,7 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     for (; k < m_n; ++k) {
         std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);
         // rsold = rsnew;
-        if conv break;
+        if (conv) break;
         rsold = rsnew;
     }
 

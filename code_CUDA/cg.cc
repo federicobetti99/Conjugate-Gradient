@@ -35,7 +35,7 @@ end
 
 */
 
-void CGSolver::solve(std::vector<double> & x) {
+void CGSolver::serial_solve(std::vector<double> & x) {
     std::vector<double> r(m_n);
     std::vector<double> p(m_n);
     std::vector<double> Ap(m_n);
@@ -103,6 +103,10 @@ void CGSolver::solve(std::vector<double> & x) {
                   << std::sqrt(rsold) << ", ||x|| = " << nx
                   << ", ||Ax - b||/||b|| = " << res << std::endl;
     }
+}
+
+void CGSolver::solve(double *x, dim3 block_size) {
+    this->kerneled_solve(x, block_size);
 }
 
 void CGSolver::read_matrix(const std::string & filename) {

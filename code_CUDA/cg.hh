@@ -19,7 +19,10 @@ public:
     void init_source_term(double h);
 
     /// serial solver for CG
-    virtual void solve(std::vector<double> & x) = 0;
+    virtual void serial_solve(std::vector<double> & x) = 0;
+
+    /// parallel solver for CG
+    virtual void solve(double *x, dim3 block_size) = 0;
 
     /// initialize size of the matrix (in this case m = n)
     inline int m() const { return m_m; }
@@ -60,7 +63,10 @@ public:
     std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
     
     /// serial solver   
-    virtual void solve(std::vector<double> & x);
+    virtual void serial_solve(std::vector<double> & x);
+
+    /// solve linear system with iterative CG
+    virtual void solve(double* x, dim3 block_size);
 
     /// solve linear system with iterative CG
     virtual void kerneled_solve(double *x, dim3 block_size);
@@ -82,7 +88,7 @@ public:
     virtual void read_matrix(const std::string & filename);
 
     /// solve linear system with iterative CG
-    virtual void solve(std::vector<double> & x);
+    virtual void serial_solve(std::vector<double> & x);
 
 private:
     /// finite element matrix

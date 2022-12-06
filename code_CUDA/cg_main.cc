@@ -45,6 +45,7 @@ int main(int argc, char ** argv) {
 
     // initialize solution vector
     double *x_d;
+    x_d = (double*)malloc(n*sizeof(double));
 
     // solve and print statistics
     auto t1 = clk::now();
