@@ -6,12 +6,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3f2bb6d8-83d5-46f2-9cfe-9e2740006b15" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_MPI/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_MPI/cg.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_MPI/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code_MPI/cg.hh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_MPI/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_MPI/cg_main.cc" afterDir="false" />
-    </list>
+    <list default="true" id="3f2bb6d8-83d5-46f2-9cfe-9e2740006b15" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

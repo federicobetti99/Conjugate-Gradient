@@ -336,29 +336,18 @@ void CGSolverSparse::solve(int start_rows[],
     int prank;
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
 
-    std::cout << "Hello from rank " << prank << " entering in solve " << std::endl;
-
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
     MatrixCOO A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
-
-    std::cout << prank << ": Good after creation of submatrix " << std::endl;
 
     // initialize conjugated direction, residual and solution for current prank
     std::vector<double> Ap(num_rows[prank]);
     std::vector<double> tmp_sub(num_rows[prank]);
    
-    std::cout << prank << ": Good before taking subparts of residual and solution " << std::endl; 
-   
     /// rank dependent variables
     // compute subparts of solution and residual
     std::vector<double> r_sub = this->get_subvector(this->m_b, num_rows[prank], start_rows[prank]);
-    
-    std::cout << prank << " Good after taking subpart of residual " << std::endl;
-
     std::vector<double> x_sub = this->get_subvector(x,         num_rows[prank], start_rows[prank]);
-
-    std::cout << prank << ": Good after taking subpart of x " << std::endl;
 
     // r = b - A * x;
     std::cout << prank << " " << A_sub.m() << ", " << A_sub.n() << ", " << A_sub.a.size() << std::endl;
@@ -366,11 +355,9 @@ void CGSolverSparse::solve(int start_rows[],
     std::cout << prank << ": Good after first matrix vector product " << std::endl;
     cblas_daxpy(r_sub.size(), -1., Ap.data(), 1, r_sub.data(), 1);
 
-
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
     std::vector<double> p = this->m_b;
-
 
     // rsold = r' * r;
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);

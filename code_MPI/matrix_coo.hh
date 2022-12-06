@@ -21,18 +21,10 @@ public:
       void mat_vec(const std::vector<double> & x, std::vector<double> & y) {
             std::fill_n(y.begin(), y.size(), 0.);
 
-            std::cout << "Good initializing y of size" << y.size() << std::endl;
-            std::cout << x.size() << std::endl;
-
             for (size_t z = 0; z < irn.size(); ++z) {
                   auto i = irn[z];
                   auto j = jcn[z];
                   auto a_ = a[z];
-
-                  std::cout << "( " << i << ", " << j << "): " << a_ << std::endl;
-                  
-                  std::cout << "Entry of y " << y[i] << std::endl;
-                  std::cout << "Entry of x " << x[j] << std::endl; 
                  
                   y[i] += a_ * x[j];
                   if (m_is_sym and (i != j)) {
