@@ -352,7 +352,6 @@ void CGSolverSparse::solve(int start_rows[],
 
     // r = b - A * x;
     A_sub.mat_vec(x, Ap);
-    r = m_b;
     cblas_daxpy(m_n, -1., Ap.data(), 1, r_sub.data(), 1);
 
     /// copy p_sub into r_sub and initialize overall p vector
