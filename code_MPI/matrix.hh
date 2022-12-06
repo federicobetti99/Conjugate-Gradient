@@ -6,25 +6,26 @@
 
 class Matrix {
 public:
-  Matrix(int m = 0, int n = 0) : m_m(m), m_n(n), m_a(m * n) {}
-  void resize(int m, int n) {
-    m_m = m;
-    m_n = n;
-    m_a.resize(m * n);
-  }
+      Matrix(int m = 0, int n = 0) : m_m(m), m_n(n), m_a(m * n) {}
 
-  inline double & operator()(int i, int j) { return m_a[i * m_n + j]; }
+      void resize(int m, int n) {
+        m_m = m;
+        m_n = n;
+        m_a.resize(m * n);
+      }
 
-  inline int m() const { return m_m; }
-  inline int n() const { return m_n; }
-  inline double * data() { return m_a.data(); }
+      inline double & operator()(int i, int j) { return m_a[i * m_n + j]; }
 
-  void read(const std::string & filename);
+      inline int m() const { return m_m; }
+      inline int n() const { return m_n; }
+      inline double * data() { return m_a.data(); }
+
+      void read(const std::string & filename);
 
 private:
-  int m_m{0};
-  int m_n{0};
-  std::vector<double> m_a;
+      int m_m{0};
+      int m_n{0};
+      std::vector<double> m_a;
 };
 
 #endif // __MATRIX_H_
