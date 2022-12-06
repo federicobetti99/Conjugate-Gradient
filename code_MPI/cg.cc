@@ -338,7 +338,7 @@ void CGSolverSparse::solve(int start_rows[],
 
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
-    Matrix A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
+    MatrixCOO A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
 
     // initialize conjugated direction, residual and solution for current prank
     int N_loc = A_sub.m();
@@ -414,4 +414,23 @@ void CGSolverSparse::solve(int start_rows[],
                   << std::sqrt(rsold) << ", ||x|| = " << nx
                   << ", ||Ax - b||/||b|| = " << res << std::endl;
     }
+}
+
+MatrixCOO CGSolverSparse::get_submatrix(int N_loc, int start_m) {
+    MatrixCOO submatrix;
+    submatrix.resize(N_loc, this->m_n);
+    for (int i = 0; i < N_loc; i++) {
+        for (int j = 0; j < m_n; j++) {
+            submatrix(i, j) = this->m_A(i + start_m, j);
+        }
+    }
+    return submatrix;
+}
+
+std::vector<double> CGSolverSparse::get_subvector(std::vector<double> & arr, int N_loc, int start_m) {
+    std::vector<double> vector(N_loc);
+    for (int i = 0; i < N_loc; i++) {
+        vector[i] = arr[start_m + i];
+    }
+    return vector;
 }

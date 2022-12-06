@@ -79,6 +79,12 @@ public:
     /// read matrix from .mtx file
     virtual void read_matrix(const std::string & filename);
 
+    /// get submatrix for parallel computation
+    Matrix get_submatrix(int N_loc, int start_m);
+
+    /// get subvector for parallel computation
+    std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
+
     /// solve linear system with iterative CG
     virtual void serial_solve(std::vector<double> & x);
 
