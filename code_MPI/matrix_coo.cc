@@ -2,6 +2,7 @@
 extern "C" {
 #include "mmio.h"
 }
+#include <iostream>
 
 void MatrixCOO::read(const std::string & fn) {
       int nz;

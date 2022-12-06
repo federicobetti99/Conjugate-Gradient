@@ -6,7 +6,6 @@ module load mvapich2
 
 make
                                                                                                                                                               
-srun -n 1 ./cgsolver lap2D_5pt_n100.mtx
 srun -n 2 ./cgsolver lap2D_5pt_n100.mtx
 srun -n 4 ./cgsolver lap2D_5pt_n100.mtx
 srun -n 8 ./cgsolver lap2D_5pt_n100.mtx

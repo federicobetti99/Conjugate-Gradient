@@ -345,9 +345,8 @@ void CGSolverSparse::solve(int start_rows[],
     std::cout << prank << ": Good after creation of submatrix " << std::endl;
 
     // initialize conjugated direction, residual and solution for current prank
-    int N_loc = A_sub.m();
-    std::vector<double> Ap(N_loc);
-    std::vector<double> tmp_sub(N_loc);
+    std::vector<double> Ap(num_rows[prank]);
+    std::vector<double> tmp_sub(num_rows[prank]);
    
     std::cout << prank << ": Good before taking subparts of residual and solution " << std::endl; 
    
@@ -362,13 +361,16 @@ void CGSolverSparse::solve(int start_rows[],
     std::cout << prank << ": Good after taking subpart of x " << std::endl;
 
     // r = b - A * x;
+    std::cout << prank << " " << A_sub.m() << ", " << A_sub.n() << ", " << A_sub.a.size() << std::endl;
     A_sub.mat_vec(x, Ap);
     std::cout << prank << ": Good after first matrix vector product " << std::endl;
     cblas_daxpy(r_sub.size(), -1., Ap.data(), 1, r_sub.data(), 1);
 
+
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
     std::vector<double> p = this->m_b;
+
 
     // rsold = r' * r;
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
