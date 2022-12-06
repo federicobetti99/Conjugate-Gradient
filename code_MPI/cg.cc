@@ -313,7 +313,7 @@ void CGSolverSparse::serial_solve(std::vector<double> & x) {
         rsold = rsnew;
         if (DEBUG) {
             std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::flush;
+                      << std::sqrt(rsold) << std::endl;
         }
     }
 
@@ -336,30 +336,42 @@ void CGSolverSparse::solve(int start_rows[],
     int prank;
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
 
+    std::cout << "Hello from rank " << prank << " entering in solve " << std::endl;
+
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
     MatrixCOO A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
+
+    std::cout << prank << ": Good after creation of submatrix " << std::endl;
 
     // initialize conjugated direction, residual and solution for current prank
     int N_loc = A_sub.m();
     std::vector<double> Ap(N_loc);
     std::vector<double> tmp_sub(N_loc);
-
+   
+    std::cout << prank << ": Good before taking subparts of residual and solution " << std::endl; 
+   
     /// rank dependent variables
     // compute subparts of solution and residual
     std::vector<double> r_sub = this->get_subvector(this->m_b, num_rows[prank], start_rows[prank]);
+    
+    std::cout << prank << " Good after taking subpart of residual " << std::endl;
+
     std::vector<double> x_sub = this->get_subvector(x,         num_rows[prank], start_rows[prank]);
+
+    std::cout << prank << ": Good after taking subpart of x " << std::endl;
 
     // r = b - A * x;
     A_sub.mat_vec(x, Ap);
-    cblas_daxpy(m_n, -1., Ap.data(), 1, r_sub.data(), 1);
+    std::cout << prank << ": Good after first matrix vector product " << std::endl;
+    cblas_daxpy(r_sub.size(), -1., Ap.data(), 1, r_sub.data(), 1);
 
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
     std::vector<double> p = this->m_b;
 
     // rsold = r' * r;
-    auto rsold = cblas_ddot(m_n, r_sub.data(), 1, r_sub.data(), 1);
+    auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
     MPI_Allreduce(MPI_IN_PLACE, &rsold, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     // for i = 1:length(b)
@@ -399,20 +411,20 @@ void CGSolverSparse::solve(int start_rows[],
         rsold = rsnew;
         if (DEBUG) {
             std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::flush;
+                      << std::sqrt(rsold) << std::endl;
         }
     }
 
-    if (DEBUG) {
-        m_A.mat_vec(x, r);
-        cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
-        auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
-                   std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
-        auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << nx
-                  << ", ||Ax - b||/||b|| = " << res << std::endl;
-    }
+    // if (DEBUG) {
+    //    m_A.mat_vec(x, r_sub);
+    //    cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
+    //    auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
+    //               std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
+    //    auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
+    //    std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+    //              << std::sqrt(rsold) << ", ||x|| = " << nx
+    //              << ", ||Ax - b||/||b|| = " << res << std::endl;
+    // }
 }
 
 MatrixCOO CGSolverSparse::get_submatrix(int N_loc, int start_m) {
@@ -421,17 +433,17 @@ MatrixCOO CGSolverSparse::get_submatrix(int N_loc, int start_m) {
         auto i = this->m_A.irn[z];
         auto j = this->m_A.jcn[z];
         auto a_ = this->m_A.a[z];
-        if (i < N_loc) {
+        if (i > start_m && i < start_m + N_loc) {
             submatrix.a.push_back(a_);
             submatrix.irn.push_back(i);
             submatrix.jcn.push_back(j);
         }
     }
     return submatrix;
-}
+} 
 
-std::vector<double> CGSolverSparse::get_subvector(std::vector<double> & arr, int N_loc, int start_m) {
-    std::vector<double> vector(N_loc);
+std::vector<double> CGSolverSparse::get_subvector(std::vector<double> &arr, int N_loc, int start_m) {
+    std::vector<double> vector(N_loc); 
     for (int i = 0; i < N_loc; i++) {
         vector[i] = arr[start_m + i];
     }

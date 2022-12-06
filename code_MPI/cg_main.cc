@@ -29,9 +29,7 @@ void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
             i0 += N_loc;
         }
         start_rows[psize-1] = i0;
-        num_rows[psize-1] = N - i0;
-        for(int prank = 0; prank < psize; prank++)                                                                                                                    {
-            std::cout << prank << ": " << start_rows[prank] << ", " << num_rows[prank] << std::endl;                                                                  }    
+        num_rows[psize-1] = N - i0;    
     }
 }
 
