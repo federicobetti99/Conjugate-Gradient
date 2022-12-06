@@ -21,9 +21,8 @@ public:
     virtual void serial_solve(std::vector<double> & x) = 0;
 
     /// solve linear system with iterative CG
-    virtual void solve(int prank,
-                       int start_rows[],
-                       int offsets_lengths[],
+    virtual void solve(int start_rows[],
+                       int num_rows[],
                        std::vector<double> & x) = 0;
 
     /// initialize size of the matrix (in this case m = n)
@@ -63,10 +62,9 @@ public:
     virtual void serial_solve(std::vector<double> & x);    
 
     /// solve linear system with iterative CG
-    virtual void solve(int prank, 
-		       int start_rows[],
-               	       int offsets_lengths[],
-		       std::vector<double> & x);
+    virtual void solve(int start_rows[],
+               	       int num_rows[],
+                       std::vector<double> & x);
 
 private:
     /// finite element matrix

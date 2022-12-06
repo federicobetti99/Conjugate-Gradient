@@ -106,14 +106,16 @@ void CGSolver::serial_solve(std::vector<double> & x) {
 }
 
 
-void CGSolver::solve(int prank,
-                     int start_rows[],
-                     int offsets_lengths[],
+void CGSolver::solve(int start_rows[],
+                     int num_rows[],
                      std::vector<double> & x) {
+
+    int prank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &prank);
 
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
-    Matrix A_sub = this->get_submatrix(offsets_lengths[prank], start_rows[prank]);
+    Matrix A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
 
     // initialize conjugated direction, residual and solution for current prank
     int N_loc = A_sub.m();
@@ -122,8 +124,8 @@ void CGSolver::solve(int prank,
 
     /// rank dependent variables
     // compute subparts of solution and residual
-    std::vector<double> r_sub = this->get_subvector(this->m_b, offsets_lengths[prank], start_rows[prank]);
-    std::vector<double> x_sub = this->get_subvector(x,         offsets_lengths[prank], start_rows[prank]); 
+    std::vector<double> r_sub = this->get_subvector(this->m_b, num_rows[prank], start_rows[prank]);
+    std::vector<double> x_sub = this->get_subvector(x,         num_rows[prank], start_rows[prank]);
 
     /// compute residual
     // r = b - A * x;
@@ -186,13 +188,13 @@ void CGSolver::solve(int prank,
         rsold = rsnew;
 
         /// MPI collective communication: gather p_sub in a global vector p from all ranks to all ranks
-        MPI_Allgatherv(&p_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
-		       &p.front(), offsets_lengths, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Allgatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,
+		       &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
     }
 
     /// MPI: construct the solution from x_sub to x by stacking together the x_sub in precise order
-    MPI_Gatherv(&x_sub.front(), offsets_lengths[prank], MPI_DOUBLE,
-		&x.front(), offsets_lengths, start_rows, MPI_DOUBLE,
+    MPI_Gatherv(&x_sub.front(), num_rows[prank], MPI_DOUBLE,
+		&x.front(), num_rows, start_rows, MPI_DOUBLE,
 		0, MPI_COMM_WORLD);
 
     // check overall residual norm at the end

@@ -38,8 +38,7 @@ int main(int argc, char ** argv) {
     MPI_Init(&argc, &argv);
 
     /// MPI: Initialize and get rank
-    int prank, psize;
-    MPI_Comm_rank(MPI_COMM_WORLD, &prank);
+    int psize;
     MPI_Comm_size(MPI_COMM_WORLD, &psize);
 
     if (argc < 2) {
@@ -75,7 +74,7 @@ int main(int argc, char ** argv) {
     if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
     if (psize == 1) solver.serial_solve(x_d);
-    else solver.solve(prank, start_rows, num_rows, x_d);
+    else solver.solve(start_rows, num_rows, x_d);
     second elapsed = clk::now() - t1;
     second max_time;
     MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
