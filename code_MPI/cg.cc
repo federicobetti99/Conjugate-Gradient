@@ -35,6 +35,15 @@ end
 
 */
 
+/// initialization of the source term b
+void Solver::init_source_term(double h) {
+    m_b.resize(m_n);
+    for (int i = 0; i < m_n; i++) {
+        m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
+                 std::sin(10. * M_PI * i * h);
+    }
+}
+
 void CGSolver::serial_solve(std::vector<double> & x) {
     std::vector<double> r(m_n);
     std::vector<double> p(m_n);
@@ -253,16 +262,7 @@ void CGSolverSparse::read_matrix(const std::string & filename) {
     m_n = m_A.n();
 }
 
-/// initialization of the source term b
-void Solver::init_source_term(double h) {
-    m_b.resize(m_n);
-    for (int i = 0; i < m_n; i++) {
-        m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
-             std::sin(10. * M_PI * i * h);
-    }
-}
-
-void CGSolverSparse::solve(std::vector<double> & x) {
+void CGSolverSparse::serial_solve(std::vector<double> & x) {
     std::vector<double> r(m_n);
     std::vector<double> p(m_n);
     std::vector<double> Ap(m_n);
@@ -308,6 +308,93 @@ void CGSolverSparse::solve(std::vector<double> & x) {
         tmp = r;
         cblas_daxpy(m_n, beta, p.data(), 1, tmp.data(), 1);
         p = tmp;
+
+        // rsold = rsnew;
+        rsold = rsnew;
+        if (DEBUG) {
+            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+                      << std::sqrt(rsold) << "\r" << std::flush;
+        }
+    }
+
+    if (DEBUG) {
+        m_A.mat_vec(x, r);
+        cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
+        auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
+                   std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
+        auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
+        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+                  << std::sqrt(rsold) << ", ||x|| = " << nx
+                  << ", ||Ax - b||/||b|| = " << res << std::endl;
+    }
+}
+
+void CGSolverSparse::solve(int start_rows[],
+                           int num_rows[],
+                           std::vector<double> & x) {
+
+    int prank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &prank);
+
+    /// rank dependent variables
+    // compute subpart of the matrix destined to prank
+    Matrix A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
+
+    // initialize conjugated direction, residual and solution for current prank
+    int N_loc = A_sub.m();
+    std::vector<double> Ap(N_loc);
+    std::vector<double> tmp_sub(N_loc);
+
+    /// rank dependent variables
+    // compute subparts of solution and residual
+    std::vector<double> r_sub = this->get_subvector(this->m_b, num_rows[prank], start_rows[prank]);
+    std::vector<double> x_sub = this->get_subvector(x,         num_rows[prank], start_rows[prank]);
+
+    // r = b - A * x;
+    A_sub.mat_vec(x, Ap);
+    r = m_b;
+    cblas_daxpy(m_n, -1., Ap.data(), 1, r_sub.data(), 1);
+
+    /// copy p_sub into r_sub and initialize overall p vector
+    std::vector<double> p_sub = r_sub;
+    std::vector<double> p = this->m_b;
+
+    // rsold = r' * r;
+    auto rsold = cblas_ddot(m_n, r_sub.data(), 1, r_sub.data(), 1);
+    MPI_Allreduce(MPI_IN_PLACE, &rsold, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    // for i = 1:length(b)
+    int k = 0;
+    for (; k < m_n; ++k) {
+        // Ap = A * p;
+        A_sub.mat_vec(p, Ap);
+
+        // alpha = rsold / (p' * Ap);
+        auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap.data(), 1),
+                                  rsold * NEARZERO);
+        MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        auto alpha = rsold / conj;
+
+        // x = x + alpha * p;
+        cblas_daxpy(x_sub.size(), alpha, p_sub.data(), 1, x_sub.data(), 1);
+
+        // r = r - alpha * Ap;
+        cblas_daxpy(r_sub.size(), -alpha, Ap.data(), 1, r_sub.data(), 1);
+
+        // rsnew = r' * r;
+        auto rsnew = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
+        MPI_Allreduce(MPI_IN_PLACE, &rsnew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+        // if sqrt(rsnew) < 1e-10
+        //   break;
+        if (std::sqrt(rsnew) < m_tolerance)
+            break; // Convergence test
+
+        auto beta = rsnew / rsold;
+        // p = r + (rsnew / rsold) * p;
+        tmp_sub = r_sub;
+        cblas_daxpy(p_sub.size(), beta, p_sub.data(), 1, tmp_sub.data(), 1);
+        p_sub = tmp_sub;
 
         // rsold = rsnew;
         rsold = rsnew;

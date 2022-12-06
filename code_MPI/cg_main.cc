@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
     }
 
     // initialize solver and read matrix from file
-    CGSolver solver;
+    CGSolverSparse solver;
     solver.read_matrix(argv[1]);
 
     // get size of the matrix

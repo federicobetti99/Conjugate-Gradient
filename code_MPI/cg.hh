@@ -80,7 +80,12 @@ public:
     virtual void read_matrix(const std::string & filename);
 
     /// solve linear system with iterative CG
-    virtual void solve(std::vector<double> & x);
+    virtual void serial_solve(std::vector<double> & x);
+
+    /// solve linear system with iterative CG
+    virtual void solve(int start_rows[],
+                       int num_rows[],
+                       std::vector<double> & x);
 
 private:
     /// finite element matrix
