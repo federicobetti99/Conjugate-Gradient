@@ -154,7 +154,7 @@ void Solver::init_source_term(double h) {
     }
 }
 
-void CGSolverSparse::solve(std::vector<double> & x) {
+void CGSolverSparse::serial_solve(std::vector<double> & x) {
     std::vector<double> r(m_n);
     std::vector<double> p(m_n);
     std::vector<double> Ap(m_n);
