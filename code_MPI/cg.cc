@@ -350,9 +350,7 @@ void CGSolverSparse::solve(int start_rows[],
     std::vector<double> x_sub = this->get_subvector(x,         num_rows[prank], start_rows[prank]);
 
     // r = b - A * x;
-    std::cout << prank << " " << A_sub.m() << ", " << A_sub.n() << ", " << A_sub.a.size() << std::endl;
     A_sub.mat_vec(x, Ap);
-    std::cout << prank << ": Good after first matrix vector product " << std::endl;
     cblas_daxpy(r_sub.size(), -1., Ap.data(), 1, r_sub.data(), 1);
 
     /// copy p_sub into r_sub and initialize overall p vector
