@@ -400,7 +400,16 @@ void CGSolverSparse::solve(int start_rows[],
             std::cout << "\t[STEP " << k << "] residual = " << std::scientific
                       << std::sqrt(rsold) << std::endl;
         }
+
+        /// MPI collective communication: gather p_sub in a global vector p from all ranks to all ranks
+        MPI_Allgatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,
+                       &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
     }
+
+    /// MPI: construct the solution from x_sub to x by stacking together the x_sub in precise order
+    MPI_Gatherv(&x_sub.front(), num_rows[prank], MPI_DOUBLE,
+                &x.front(), num_rows, start_rows, MPI_DOUBLE,
+                0, MPI_COMM_WORLD);
 
     // if (DEBUG) {
     //    m_A.mat_vec(x, r_sub);
