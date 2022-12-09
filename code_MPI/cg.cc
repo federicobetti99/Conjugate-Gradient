@@ -336,9 +336,13 @@ void CGSolverSparse::solve(int start_rows[],
     int prank;
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
 
+    std::cout << prank << "Total number of nnz elements: " << this->m_A.irn_size() << std::endl;
+
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
     MatrixCOO A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
+
+    std::cout << A_sub.irn_size() << "elements distributed on rank" << prank << std::endl;
 
     // initialize conjugated direction, residual and solution for current prank
     std::vector<double> Ap(num_rows[prank]);
