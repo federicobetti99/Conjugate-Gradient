@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <mpi.h>
 
 #ifndef __MATRIX_COO_H_
 #define __MATRIX_COO_H_
@@ -19,14 +20,13 @@ public:
       void read(const std::string & filename);
 
       void mat_vec(const std::vector<double> & x, std::vector<double> & y) {
-            std::fill_n(y.begin(), y.size(), 0.);
+            std::fill_n(y.begin(), y.size(), 0.); 
 
             for (size_t z = 0; z < irn.size(); ++z) {
                   auto i = irn[z];
                   auto j = jcn[z];
                   auto a_ = a[z];
-                 
-                  y[i] += a_ * x[j];
+                  y[i] += a_ * x[j];               
                   if (m_is_sym and (i != j)) {
                     y[j] += a_ * x[i];
                   }

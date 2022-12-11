@@ -124,7 +124,7 @@ void CGSolver::solve(int start_rows[],
 
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
-    Matrix A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
+    Matrix A_sub = get_submatrix(m_A, num_rows[prank], start_rows[prank]);
 
     // initialize conjugated direction, residual and solution for current prank
     int N_loc = A_sub.m();
@@ -133,8 +133,8 @@ void CGSolver::solve(int start_rows[],
 
     /// rank dependent variables
     // compute subparts of solution and residual
-    std::vector<double> r_sub = this->get_subvector(this->m_b, num_rows[prank], start_rows[prank]);
-    std::vector<double> x_sub = this->get_subvector(x,         num_rows[prank], start_rows[prank]);
+    std::vector<double> r_sub = get_subvector(m_b, num_rows[prank], start_rows[prank]);
+    std::vector<double> x_sub = get_subvector(x,   num_rows[prank], start_rows[prank]);
 
     /// compute residual
     // r = b - A * x;
@@ -145,7 +145,7 @@ void CGSolver::solve(int start_rows[],
 
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
-    std::vector<double> p = this->m_b;
+    std::vector<double> p = m_b;
 
     /// MPI: compute residual rank-wise and reduce
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
@@ -228,16 +228,30 @@ void CGSolver::solve(int start_rows[],
 
 void CGSolver::read_matrix(const std::string & filename) {
   m_A.read(filename);
-  m_m = m_A.m();
-  m_n = m_A.n();
 }
 
-Matrix CGSolver::get_submatrix(int N_loc, int start_m) {
+void CGSolver::reduce_problem(int N_sub) {
+	Matrix A_sub;
+	A_sub.resize(N_sub, N_sub);
+	for (int i = 0; i < N_sub; i++) {
+	   for (int j = 0; j < N_sub; j++) {
+	       A_sub(i, j) = m_A(i, j);
+	   }
+        }
+	m_A = A_sub;	
+}
+
+void CGSolver::set_problem_size() {
+       m_m = m_A.m();
+       m_n = m_A.n();
+} 	
+
+Matrix CGSolver::get_submatrix(Matrix A, int N_loc, int start_m) {
     Matrix submatrix;
-    submatrix.resize(N_loc, this->m_n);
+    submatrix.resize(N_loc, A.n());
     for (int i = 0; i < N_loc; i++) {
-        for (int j = 0; j < m_n; j++) {
-            submatrix(i, j) = this->m_A(i + start_m, j);
+        for (int j = 0; j < A.n(); j++) {
+            submatrix(i, j) = A(i + start_m, j);
         }
     }
     return submatrix;
@@ -278,7 +292,7 @@ void CGSolverSparse::serial_solve(std::vector<double> & x) {
 
     // rsold = r' * r;
     auto rsold = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
-
+   
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
@@ -286,8 +300,8 @@ void CGSolverSparse::serial_solve(std::vector<double> & x) {
         m_A.mat_vec(p, Ap);
 
         // alpha = rsold / (p' * Ap);
-        auto alpha = rsold / std::max(cblas_ddot(m_n, p.data(), 1, Ap.data(), 1),
-                                      rsold * NEARZERO);
+        auto conj = std::max(cblas_ddot(m_n, p.data(), 1, Ap.data(), 1), rsold * NEARZERO);
+        auto alpha = rsold / conj;
 
         // x = x + alpha * p;
         cblas_daxpy(m_n, alpha, p.data(), 1, x.data(), 1);
@@ -336,13 +350,9 @@ void CGSolverSparse::solve(int start_rows[],
     int prank;
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
 
-    std::cout << prank << "Total number of nnz elements: " << this->m_A.irn_size() << std::endl;
-
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
-    MatrixCOO A_sub = this->get_submatrix(num_rows[prank], start_rows[prank]);
-
-    std::cout << A_sub.irn_size() << "elements distributed on rank" << prank << std::endl;
+    MatrixCOO A_sub = this->get_submatrix(m_A, num_rows[prank], start_rows[prank]);
 
     // initialize conjugated direction, residual and solution for current prank
     std::vector<double> Ap(num_rows[prank]);
@@ -350,8 +360,8 @@ void CGSolverSparse::solve(int start_rows[],
    
     /// rank dependent variables
     // compute subparts of solution and residual
-    std::vector<double> r_sub = this->get_subvector(this->m_b, num_rows[prank], start_rows[prank]);
-    std::vector<double> x_sub = this->get_subvector(x,         num_rows[prank], start_rows[prank]);
+    std::vector<double> r_sub = this->get_subvector(m_b, num_rows[prank], start_rows[prank]);
+    std::vector<double> x_sub = this->get_subvector(x,   num_rows[prank], start_rows[prank]);
 
     // r = b - A * x;
     A_sub.mat_vec(x, Ap);
@@ -359,12 +369,12 @@ void CGSolverSparse::solve(int start_rows[],
 
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
-    std::vector<double> p = this->m_b;
+    std::vector<double> p = m_b;
 
     // rsold = r' * r;
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
     MPI_Allreduce(MPI_IN_PLACE, &rsold, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
+ 
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
@@ -426,12 +436,12 @@ void CGSolverSparse::solve(int start_rows[],
     // }
 }
 
-MatrixCOO CGSolverSparse::get_submatrix(int N_loc, int start_m) {
+MatrixCOO CGSolverSparse::get_submatrix(MatrixCOO A, int N_loc, int start_m) {
     MatrixCOO submatrix;
-    for (int z = 0; z < this->m_A.nz(); ++z) {
-        auto i = this->m_A.irn[z];
-        auto j = this->m_A.jcn[z];
-        auto a_ = this->m_A.a[z];
+    for (int z = 0; z < A.nz(); ++z) {
+        auto i = A.irn[z];
+        auto j = A.jcn[z];
+        auto a_ = A.a[z];
         if (i >= start_m && i < start_m + N_loc) {
             submatrix.a.push_back(a_);
             submatrix.irn.push_back(i);

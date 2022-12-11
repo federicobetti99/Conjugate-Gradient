@@ -51,9 +51,14 @@ public:
 
     /// read matrix from .mtx file
     virtual void read_matrix(const std::string & filename);
+
+    /// reduce matrix size for weak scaling experiments
+    void reduce_problem(int N_sub);
+
+    void set_problem_size();
    
     /// get submatrix for parallel computation
-    Matrix get_submatrix(int N_loc, int start_m);    
+    Matrix get_submatrix(Matrix A, int N_loc, int start_m);    
 
     /// get subvector for parallel computation
     std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
@@ -80,7 +85,7 @@ public:
     virtual void read_matrix(const std::string & filename);
 
     /// get submatrix for parallel computation
-    MatrixCOO get_submatrix(int N_loc, int start_m);
+    MatrixCOO get_submatrix(MatrixCOO A, int N_loc, int start_m);
 
     /// get subvector for parallel computation
     std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);

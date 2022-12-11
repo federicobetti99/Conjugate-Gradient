@@ -1,6 +1,7 @@
 #include "cg.hh"
 #include <chrono>
 #include <iostream>
+#include <sstream>
 #include <mpi.h>
 #include <fstream>
 
@@ -38,7 +39,8 @@ int main(int argc, char ** argv) {
     MPI_Init(&argc, &argv);
 
     /// MPI: Initialize and get rank
-    int psize;
+    int prank, psize;
+    MPI_Comm_rank(MPI_COMM_WORLD, &prank);
     MPI_Comm_size(MPI_COMM_WORLD, &psize);
 
     if (argc < 2) {
@@ -48,10 +50,18 @@ int main(int argc, char ** argv) {
     }
 
     // initialize solver and read matrix from file
-    CGSolverSparse solver;
+    CGSolver solver;
     solver.read_matrix(argv[1]);
 
+    if (argc >= 3) {
+	std::stringstream arg_0(argv[2]);
+    	int N_sub;
+    	arg_0 >> N_sub;
+	solver.reduce_problem(N_sub);
+    } 
+
     // get size of the matrix
+    solver.set_problem_size();
     int n = solver.n();
     int m = solver.m();
 
@@ -71,14 +81,13 @@ int main(int argc, char ** argv) {
     std::fill(x_d.begin(), x_d.end(), 0.);
 
     // solve and print statistics
-    std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
+    if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
-    if (psize == 1) solver.serial_solve(x_d);
-    else solver.solve(start_rows, num_rows, x_d);
+    solver.solve(start_rows, num_rows, x_d);
     second elapsed = clk::now() - t1;
     second max_time;
     MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n"; 
+    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n"; 
 
     /// MPI: Finalize
     MPI_Finalize();
