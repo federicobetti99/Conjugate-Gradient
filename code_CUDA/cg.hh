@@ -16,7 +16,7 @@ public:
     virtual void read_matrix(const std::string & filename) = 0;
 
     /// initialize source term
-    void init_source_term(double h);
+    virtual void init_source_term(double h) = 0;
 
     /// initialize size of the matrix (in this case m = n)
     inline int m() const { return m_m; }
@@ -49,7 +49,7 @@ public:
 
     /// read matrix from .mtx file
     virtual void read_matrix(const std::string & filename);
-    
+
     /// initialize source term
     void init_source_term(double h);
 
