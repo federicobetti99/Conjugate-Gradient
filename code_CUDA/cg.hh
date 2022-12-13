@@ -49,7 +49,10 @@ public:
 
     /// read matrix from .mtx file
     virtual void read_matrix(const std::string & filename);
-   
+    
+    /// initialize source term
+    void init_source_term(double h);
+
     /// get submatrix for parallel computation
     Matrix get_submatrix(int N_loc, int start_m);    
 

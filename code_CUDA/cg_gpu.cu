@@ -168,7 +168,7 @@ void CGSolver::read_matrix(const std::string & filename) {
 }
 
 /// initialization of the source term b
-void Solver::init_source_term(double h) {
+void CGSolver::init_source_term(double h) {
     for (int i = 0; i < m_n; i++) {
         m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
                  std::sin(10. * M_PI * i * h);
