@@ -47,10 +47,10 @@ public:
     CGSolver() = default;
 
     /// read matrix from .mtx file
-    virtual void read_matrix(const std::string & filename);
+    void read_matrix(const std::string & filename) override;
 
     /// initialize source term
-    void init_source_term(double h);
+    void init_source_term(double h) override;
 
     /// get submatrix for parallel computation
     Matrix get_submatrix(int N_loc, int start_m);    
@@ -59,10 +59,10 @@ public:
     std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
 
     /// solve linear system with iterative CG
-    virtual void kerneled_solve(double *x, dim3 block_size);
+    virtual void kerneled_solve(double *x, dim3 block_size) override;
 
     virtual std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
-                                  double rsold, dim3 grid_size, dim3 block_size);
+                                  double rsold, dim3 grid_size, dim3 block_size) override;
 
 private:
     /// finite element matrix
