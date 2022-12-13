@@ -1,6 +1,4 @@
 #!/bin/bash
-#SBATCH --account=Course-math-454
-#SBATCH --nodes=1
 
 module purge
 module load gcc openblas
