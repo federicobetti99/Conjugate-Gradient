@@ -15,6 +15,7 @@ public:
   void set_problem_size(int m, int n) {
     m_m = m;
     m_n = n;
+    cudaMallocManaged(&m_a, m_m * m_n * sizeof(double));
   }
 
   __host__ __device__ inline double & operator()(int i, int j) { return m_a[i * m_n + j]; }

@@ -16,7 +16,7 @@ static void usage(const std::string & prog_name) {
 int main(int argc, char ** argv) {
 
     dim3 block_size;
-    if (argc >= 2) {
+    if (argc >= 3) {
         try {
             block_size.x = std::stoi(argv[2]);
         } catch(std::invalid_argument &) {
@@ -24,7 +24,7 @@ int main(int argc, char ** argv) {
         }
     }
 
-    if (argc == 3) {
+    if (argc == 4) {
         try {
             block_size.y = std::stoi(argv[3]);
         } catch(std::invalid_argument &) {
@@ -45,7 +45,7 @@ int main(int argc, char ** argv) {
 
     // initialize solution vector
     double *x_d;
-    x_d = (double*)malloc(n*sizeof(double));
+    cudaMallocManaged(&x_d, n*sizeof(double));
 
     // solve and print statistics
     auto t1 = clk::now();

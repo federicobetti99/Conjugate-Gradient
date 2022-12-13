@@ -28,8 +28,8 @@ public:
     /// solve linear system with iterative CG
     void kerneled_solve(double *x, dim3 block_size);
 
-    std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
-                                  double rsold, dim3 grid_size, dim3 block_size);
+    std::tuple<double*, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
+                                             double* rsold, dim3 grid_size, dim3 block_size);
 
 protected:
     /// initialize m and n

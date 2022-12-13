@@ -9,9 +9,8 @@ const double NEARZERO = 1.0e-14;
 const bool DEBUG = false;
 
 __global__ void matrix_vector_product(Matrix A, double* p, double* Ap) {
-    int thread_index = threadIdx.x;
-    int block_index  = blockIdx.x;
-    int i = block_index * blockDim.x + thread_index;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    Ap[i] = 0.;
     for (unsigned int j = 0; j < A.n(); ++j) {
         Ap[i] += A(i, j) * p[j];
     }
@@ -19,18 +18,15 @@ __global__ void matrix_vector_product(Matrix A, double* p, double* Ap) {
 }
 
 __global__ void vector_sum(double* a, double alpha, double* b) {
-    int thread_index = threadIdx.x;
-    int block_index  = blockIdx.x;
-    int i = block_index * blockDim.x + thread_index;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
     a[i] = a[i] + alpha * b[i];
     __syncthreads();
 }
 
-__global__ void scalar_product(double* a, double* b, double result) {
-    int thread_index = threadIdx.x;
-    int block_index  = blockIdx.x;
-    int i = block_index * blockDim.x + thread_index;
-    result += a[i] * b[i];
+__global__ void scalar_product(double* a, double* b, double* result) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    *result = 0.;
+    *result += a[i] * b[i];
     __syncthreads();
 }
 
@@ -48,20 +44,27 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     // r = b - A * x;
     matrix_vector_product<<<grid_size, block_size>>>(m_A, x, Ap);
 
+    std::cout << "Good after first matrix vector product" << std::endl;
+
     r = m_b;
     vector_sum<<<grid_size, block_size>>>(r, -1., Ap);
     // p = r;
     p = r;
 
     // rsold = r' * r;
-    double rsold = 0.;
+    double* rsold;
+    cudaMallocManaged(&rsold, sizeof(double));
     scalar_product<<<grid_size, block_size>>>(r, p, rsold);
+
+    std::cout << "Good after first scalar product" << std::endl;
 
     // for i = 1:length(b)
     bool conv;
-    double rsnew = 0.;
+    double* rsnew;
+    cudaMallocManaged(&rsnew, sizeof(double));
     int k = 0;
     for (; k < m_n; ++k) {
+        std::cout << "Entering loop" << std::endl;
         std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);
         // rsold = rsnew;
         if (conv) break;
@@ -74,11 +77,12 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
         vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);
         scalar_product<<<grid_size, block_size>>>(r, r, rsold);
         scalar_product<<<grid_size, block_size>>>(m_b, m_b, rsnew);
-        auto res = rsold/rsnew;
-        double norm_x = 0.;
+        auto res = *rsold / *rsnew;
+        double* norm_x;
+        cudaMallocManaged(&norm_x, sizeof(double));
         scalar_product<<<grid_size, block_size>>>(x, x, norm_x);
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << norm_x
+                  << std::sqrt(*rsold) << ", ||x|| = " << *norm_x
                   << ", ||Ax - b||/||b|| = " << res << std::endl;
     }
 
@@ -88,18 +92,24 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     cudaFree(Ap);
 }
 
-std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
-                                                  double rsold, dim3 grid_size, dim3 block_size) {
+std::tuple<double*, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
+                                                  double* rsold, dim3 grid_size, dim3 block_size) {
     // Ap = A * p;
     bool conv = false;
     matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
     cudaDeviceSynchronize();
 
+    std::cout << "First matrix vector product" << std::endl;
+
     // alpha = rsold / (p' * Ap);
-    double conj = 0.;
+    double* conj;
+    cudaMallocManaged(&conj, sizeof(double));
     scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
+
+    std::cout << "First scalar product " << std::endl;
+
     cudaDeviceSynchronize();
-    auto alpha = rsold / std::max(conj, rsold * NEARZERO);
+    auto alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
 
     // x = x + alpha * p;
     vector_sum<<<grid_size, block_size>>>(x, alpha, p);
@@ -107,17 +117,20 @@ std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double*
     vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
     cudaDeviceSynchronize();
 
+    std::cout << "Vector sums ok " << std::endl;
+
     // rsnew = r' * r;
-    double rsnew = 0.;
+    double* rsnew;
+    cudaMallocManaged(&rsnew, sizeof(double));
     scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
     cudaDeviceSynchronize();
 
     // if sqrt(rsnew) < 1e-10
     //   break;
-    if (std::sqrt(rsnew) < m_tolerance)
+    if (std::sqrt(*rsnew) < m_tolerance)
         conv = true; // Convergence test
 
-    auto beta = rsnew / rsold;
+    auto beta = *rsnew / *rsold;
     // p = r + (rsnew / rsold) * p
     vector_sum<<<grid_size, block_size>>>(p, beta, r);
     cudaDeviceSynchronize();
@@ -135,6 +148,7 @@ void CGSolver::read_matrix(const std::string & filename) {
 Initialization of the source term b
 */
 void CGSolver::init_source_term(double h) {
+  cudaMallocManaged(&m_b, m_n*sizeof(double));
   for (int i = 0; i < m_n; i++) {
     m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
              std::sin(10. * M_PI * i * h);
