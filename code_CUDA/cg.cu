@@ -59,9 +59,6 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     std::cout << "Good after first scalar product" << std::endl;
 
     // for i = 1:length(b)
-    bool conv;
-    double* rsnew;
-    cudaMallocManaged(&rsnew, sizeof(double));
     int k = 0;
     for (; k < m_n; ++k) {
         // Ap = A * p;
