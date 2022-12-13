@@ -61,8 +61,7 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
-        // Ap = A * p;
-        bool conv = false;
+        // Ap = A * p
         matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
         cudaDeviceSynchronize();
 
