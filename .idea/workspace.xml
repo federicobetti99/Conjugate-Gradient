@@ -6,7 +6,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="94313744-0f7e-4cb8-ad26-8d225c1b01c0" name="Changes" comment="" />
+    <list default="true" id="94313744-0f7e-4cb8-ad26-8d225c1b01c0" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -47,6 +50,7 @@
       <option name="presentableId" value="Default" />
       <updated>1670778775654</updated>
       <workItem from="1670778777010" duration="129000" />
+      <workItem from="1670917905801" duration="454000" />
     </task>
     <servers />
   </component>
