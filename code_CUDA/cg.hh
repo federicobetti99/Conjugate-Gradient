@@ -2,8 +2,7 @@
 #include <string>
 #include <vector>
 #include <tuple>
-#include <cuda_runtime.h> 
-#include "cg_gpu.cu"
+#include <cuda_runtime.h>
 
 #ifndef __CG_HH__
 #define __CG_HH__
