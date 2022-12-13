@@ -1,20 +1,18 @@
 /* -------------------------------------------------------------------------- */
-#include "cg.hh"
 #include "matrix.hh"
 #include "matrix_coo.hh"
 /* -------------------------------------------------------------------------- */
 #include <iostream>
 #include <exception>
+#include <cuda_runtime.h>
 /* -------------------------------------------------------------------------- */
-const double NEARZERO = 1.0e-14;
-const bool DEBUG = true;
 /* -------------------------------------------------------------------------- */
 __global__ void matrix_vector_product(Matrix A, double* p, double* Ap) {
     int thread_index = threadIdx.x;
     int block_index  = blockIdx.x;
     int i = block_index * blockDim.x + thread_index;
     for (unsigned int j = 0; j < A.n(); ++j) {
-        Ap[i] += A(i, j) * p(j);
+        Ap[i] += A(i, j) * p[j];
     }
     __syncthreads();
 }

@@ -1,10 +1,9 @@
-#include "matrix.hh"
-#include "matrix_coo.hh"
 #include <cblas.h>
 #include <string>
 #include <vector>
 #include <tuple>
 #include <cuda_runtime.h> 
+#include "cg_gpu.cu"
 
 #ifndef __CG_HH__
 #define __CG_HH__
