@@ -104,31 +104,10 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
         rsold = rsnew;
     }
 
-    if (DEBUG) {
-        matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);
-        cudaDeviceSynchronize();
-        vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);
-        scalar_product<<<grid_size, block_size>>>(r, r, rsold);
-        scalar_product<<<grid_size, block_size>>>(m_b, m_b, rsnew);
-        auto res = *rsold / *rsnew;
-        double* norm_x;
-        cudaMallocManaged(&norm_x, sizeof(double));
-        scalar_product<<<grid_size, block_size>>>(x, x, norm_x);
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(*rsold) << ", ||x|| = " << *norm_x
-                  << ", ||Ax - b||/||b|| = " << res << std::endl;
-    }
-
     cudaFree(r);
     cudaFree(tmp);
     cudaFree(p);
     cudaFree(Ap);
-}
-
-std::tuple<double*, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
-                                                  double* rsold, dim3 grid_size, dim3 block_size) {
-
-    return std::make_tuple(rsnew, conv);
 }
 
 void CGSolver::read_matrix(const std::string & filename) {
