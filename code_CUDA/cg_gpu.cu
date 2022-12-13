@@ -90,7 +90,8 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     p = r;
 
     // rsold = r' * r;
-    double rsold = 0.;
+    double* rsold = 0.;
+    cudaMallocManaged(&rsold, sizeof(double));
     scalar_product<<<grid_size, block_size>>>(r, p, rsold);
 
     // for i = 1:length(b)
@@ -98,9 +99,38 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     double rsnew = 0.;
     int k = 0;
     for (; k < m_n; ++k) {
-        std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);
-        // rsold = rsnew;
-        if (conv) break;
+
+        // Ap = A * p;
+        bool conv = false;
+        matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
+        cudaDeviceSynchronize();
+
+        // alpha = rsold / (p' * Ap);
+        double* conj = 0.;
+        cudaMallocManaged(&conj, sizeof(double));
+        scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
+        cudaDeviceSynchronize();
+        auto alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
+
+        // x = x + alpha * p;
+        vector_sum<<<grid_size, block_size>>>(x, alpha, p);
+        // r = r - alpha * Ap;
+        vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
+        cudaDeviceSynchronize();
+
+        // rsnew = r' * r;
+        double* rsnew = 0.;
+        cudaMallocManaged(&rsnew, sizeof(double));
+        scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
+        cudaDeviceSynchronize();
+
+        if (std::sqrt(*rsnew) < m_tolerance)
+            break; // Convergence test
+
+        auto beta = *rsnew / *rsold;
+        // p = r + (rsnew / rsold) * p
+        vector_sum<<<grid_size, block_size>>>(p, beta, r);
+        cudaDeviceSynchronize();
         rsold = rsnew;
     }
 
@@ -110,55 +140,19 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
         vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);
         scalar_product<<<grid_size, block_size>>>(r, r, rsold);
         scalar_product<<<grid_size, block_size>>>(m_b, m_b, rsnew);
-        auto res = rsold/rsnew;
-        double norm_x = 0.;
+        auto res = *rsold / *rsnew;
+        double* norm_x;
+        cudaMallocManaged(&norm_x, sizeof(double));
         scalar_product<<<grid_size, block_size>>>(x, x, norm_x);
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << norm_x
+                  << std::sqrt(*rsold) << ", ||x|| = " << *norm_x
                   << ", ||Ax - b||/||b|| = " << res << std::endl;
     }
 
-    cudaFree(&r);
-    cudaFree(&tmp);
-    cudaFree(&p);
-    cudaFree(&Ap);
-}
-
-std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
-                                                  double rsold, dim3 grid_size, dim3 block_size) {
-    // Ap = A * p;
-    bool conv = false;
-    matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
-    cudaDeviceSynchronize();
-
-    // alpha = rsold / (p' * Ap);
-    double conj = 0.;
-    scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
-    cudaDeviceSynchronize();
-    auto alpha = rsold / std::max(conj, rsold * NEARZERO);
-
-    // x = x + alpha * p;
-    vector_sum<<<grid_size, block_size>>>(x, alpha, p);
-    // r = r - alpha * Ap;
-    vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
-    cudaDeviceSynchronize();
-
-    // rsnew = r' * r;
-    double rsnew = 0.;
-    scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
-    cudaDeviceSynchronize();
-
-    // if sqrt(rsnew) < 1e-10
-    //   break;
-    if (std::sqrt(rsnew) < m_tolerance)
-        conv = true; // Convergence test
-
-    auto beta = rsnew / rsold;
-    // p = r + (rsnew / rsold) * p
-    vector_sum<<<grid_size, block_size>>>(p, beta, r);
-    cudaDeviceSynchronize();
-
-    return std::make_tuple(rsnew, conv);
+    cudaFree(r);
+    cudaFree(tmp);
+    cudaFree(p);
+    cudaFree(Ap);
 }
 
 void CGSolver::read_matrix(const std::string & filename) {
@@ -169,6 +163,7 @@ void CGSolver::read_matrix(const std::string & filename) {
 
 /// initialization of the source term b
 void CGSolver::init_source_term(double h) {
+    cudaMallocManaged(&m_b, m_n * sizeof(double));
     for (int i = 0; i < m_n; i++) {
         m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
                  std::sin(10. * M_PI * i * h);

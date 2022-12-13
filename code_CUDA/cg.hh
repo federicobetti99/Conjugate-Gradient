@@ -28,9 +28,6 @@ public:
     /// solve linear system with iterative CG
     void kerneled_solve(double *x, dim3 block_size);
 
-    std::tuple<double*, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,
-                                             double* rsold, dim3 grid_size, dim3 block_size);
-
 protected:
     /// initialize m and n
     int m_m{0};
@@ -41,7 +38,7 @@ protected:
 
     /// residual tolerance
     double m_tolerance{1e-10};
-    
+
 private:
     /// finite element matrix
     Matrix m_A;

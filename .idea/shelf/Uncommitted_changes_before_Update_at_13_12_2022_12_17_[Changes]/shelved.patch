@@ -1,0 +1,167 @@
+Index: code_CUDA/cg.hh
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include <cblas.h>\r\n#include <string>\r\n#include <vector>\r\n#include <tuple>\r\n#include <iostream>\r\n#include <cuda_runtime.h>\r\n\r\n#ifndef __CG_HH__\r\n#define __CG_HH__\r\n\r\nclass CGSolver\r\n{\r\npublic:\r\n    /// initialize solver\r\n    CGSolver() = default;\r\n\r\n    /// read matrix from .mtx file\r\n    void read_matrix(const std::string & filename);\r\n\r\n    /// initialize source term\r\n    void init_source_term(double h);\r\n\r\n    /// get submatrix for parallel computation\r\n    Matrix get_submatrix(int N_loc, int start_m);    \r\n\r\n    /// get subvector for parallel computation\r\n    std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);\r\n\r\n    /// solve linear system with iterative CG\r\n    void kerneled_solve(double *x, dim3 block_size);\r\n\r\n    std::tuple<double, bool> cg_step_kernel(double* Ap, double* p, double* r, double* x,\r\n                                  double rsold, dim3 grid_size, dim3 block_size);\r\n\r\nprotected:\r\n    /// initialize m and n\r\n    int m_m{0};\r\n    int m_n{0};\r\n\r\n    /// right hand side\r\n    double* m_b;\r\n\r\n    /// residual tolerance\r\n    double m_tolerance{1e-10};\r\n    \r\nprivate:\r\n    /// finite element matrix\r\n    Matrix m_A;\r\n};\r\n\r\n#endif /* __CG_HH__ */\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/code_CUDA/cg.hh b/code_CUDA/cg.hh
+--- a/code_CUDA/cg.hh	(revision 08ca19c0fbc0e3d421645ed2d511ef4b318a39ce)
++++ b/code_CUDA/cg.hh	(date 1670930222656)
+@@ -42,7 +42,7 @@
+ 
+     /// residual tolerance
+     double m_tolerance{1e-10};
+-    
++
+ private:
+     /// finite element matrix
+     Matrix m_A;
+Index: code_CUDA/cg_gpu.cu
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>/* -------------------------------------------------------------------------- */\r\n#include \"cg.hh\"\r\n#include \"matrix.hh\"\r\n#include \"matrix_coo.hh\"\r\n/* -------------------------------------------------------------------------- */\r\n#include <cmath>\r\n#include <algorithm>\r\n#include <iostream>\r\n#include <exception>\r\n/* -------------------------------------------------------------------------- */\r\n\r\nconst double NEARZERO = 1.0e-14;\r\nconst bool DEBUG = true;\r\n\r\n/*\r\n    cg-solver solves the linear equation A*x = b where A is\r\n    of size m x n\r\n\r\nCode based on MATLAB code (from wikipedia ;-)  ):\r\n\r\nfunction x = conj-grad(A, b, x)\r\n    r = b - A * x;\r\n    p = r;\r\n    rsold = r' * r;\r\n\r\n    for i = 1:length(b)\r\n        Ap = A * p;\r\n        alpha = rsold / (p' * Ap);\r\n        x =A_sub.n()alpha * p;\r\n        r = r - alphaA_sub;\r\n        rsnew = rA_sub;\r\n        if sqrt(rsnew) < tolerance\r\n              break;\r\n        end\r\n        p = r + (rsnew / rsold) * p;\r\n        rsold = rsnew;\r\n    end\r\nend\r\n\r\n*/\r\n\r\n\r\n/*\r\nSparse version of the cg solver\r\n*/\r\n\r\n__global__ void matrix_vector_product(Matrix A, double* p, double* Ap) {\r\n    int thread_index = threadIdx.x;\r\n    int block_index  = blockIdx.x;\r\n    int i = block_index * blockDim.x + thread_index;\r\n    for (unsigned int j = 0; j < A.n(); ++j) {\r\n        Ap[i] += A(i, j) * p[j];\r\n    }\r\n    __syncthreads();\r\n}\r\n\r\n__global__ void vector_sum(double* a, double alpha, double* b) {\r\n    int thread_index = threadIdx.x;\r\n    int block_index  = blockIdx.x;\r\n    int i = block_index * blockDim.x + thread_index;\r\n    a[i] = a[i] + alpha * b[i];\r\n    __syncthreads();\r\n}\r\n\r\n__global__ void scalar_product(double * a, double * b, double result) {\r\n    int thread_index = threadIdx.x;\r\n    int block_index  = blockIdx.x;\r\n    int i = block_index * blockDim.x + thread_index;\r\n    result += a[i]*b[i];\r\n    __syncthreads();\r\n}\r\n\r\nvoid CGSolver::kerneled_solve(double *x, dim3 block_size) {\r\n    double *r, *p, *Ap, *tmp;\r\n    cudaMallocManaged(&r, m_n * sizeof(double));\r\n    cudaMallocManaged(&p, m_n * sizeof(double));\r\n    cudaMallocManaged(&Ap, m_n * sizeof(double));\r\n    cudaMallocManaged(&tmp, m_n * sizeof(double));\r\n\r\n    dim3 grid_size;\r\n    grid_size.x = m_m/block_size.x;\r\n    grid_size.y = m_n/block_size.y;\r\n\r\n    // r = b - A * x;\r\n    matrix_vector_product<<<grid_size, block_size>>>(m_A, x, Ap);\r\n\r\n    r = m_b;\r\n    vector_sum<<<grid_size, block_size>>>(r, -1., Ap);\r\n    // p = r;\r\n    p = r;\r\n\r\n    // rsold = r' * r;\r\n    double rsold = 0.;\r\n    scalar_product<<<grid_size, block_size>>>(r, p, rsold);\r\n\r\n    // for i = 1:length(b)\r\n    bool conv;\r\n    double rsnew = 0.;\r\n    int k = 0;\r\n    for (; k < m_n; ++k) {\r\n        std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);\r\n        // rsold = rsnew;\r\n        if (conv) break;\r\n        rsold = rsnew;\r\n    }\r\n\r\n    if (DEBUG) {\r\n        matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);\r\n        cudaDeviceSynchronize();\r\n        vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);\r\n        scalar_product<<<grid_size, block_size>>>(r, r, rsold);\r\n        scalar_product<<<grid_size, block_size>>>(m_b, m_b, rsnew);\r\n        auto res = rsold/rsnew;\r\n        double norm_x = 0.;\r\n        scalar_product<<<grid_size, block_size>>>(x, x, norm_x);\r\n        std::cout << \"\\t[STEP \" << k << \"] residual = \" << std::scientific\r\n                  << std::sqrt(rsold) << \", ||x|| = \" << norm_x\r\n                  << \", ||Ax - b||/||b|| = \" << res << std::endl;\r\n    }\r\n\r\n    cudaFree(&r);\r\n    cudaFree(&tmp);\r\n    cudaFree(&p);\r\n    cudaFree(&Ap);\r\n}\r\n\r\nstd::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,\r\n                                                  double rsold, dim3 grid_size, dim3 block_size) {\r\n    // Ap = A * p;\r\n    bool conv = false;\r\n    matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);\r\n    cudaDeviceSynchronize();\r\n\r\n    // alpha = rsold / (p' * Ap);\r\n    double conj = 0.;\r\n    scalar_product<<<grid_size, block_size>>>(p, Ap, conj);\r\n    cudaDeviceSynchronize();\r\n    auto alpha = rsold / std::max(conj, rsold * NEARZERO);\r\n\r\n    // x = x + alpha * p;\r\n    vector_sum<<<grid_size, block_size>>>(x, alpha, p);\r\n    // r = r - alpha * Ap;\r\n    vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);\r\n    cudaDeviceSynchronize();\r\n\r\n    // rsnew = r' * r;\r\n    double rsnew = 0.;\r\n    scalar_product<<<grid_size, block_size>>>(r, r, rsnew);\r\n    cudaDeviceSynchronize();\r\n\r\n    // if sqrt(rsnew) < 1e-10\r\n    //   break;\r\n    if (std::sqrt(rsnew) < m_tolerance)\r\n        conv = true; // Convergence test\r\n\r\n    auto beta = rsnew / rsold;\r\n    // p = r + (rsnew / rsold) * p\r\n    vector_sum<<<grid_size, block_size>>>(p, beta, r);\r\n    cudaDeviceSynchronize();\r\n\r\n    return std::make_tuple(rsnew, conv);\r\n}\r\n\r\nvoid CGSolver::read_matrix(const std::string & filename) {\r\n    m_A.read(filename);\r\n    m_m = m_A.m();\r\n    m_n = m_A.n();\r\n}\r\n\r\n/// initialization of the source term b\r\nvoid CGSolver::init_source_term(double h) {\r\n    for (int i = 0; i < m_n; i++) {\r\n        m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *\r\n                 std::sin(10. * M_PI * i * h);\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/code_CUDA/cg_gpu.cu b/code_CUDA/cg_gpu.cu
+--- a/code_CUDA/cg_gpu.cu	(revision 08ca19c0fbc0e3d421645ed2d511ef4b318a39ce)
++++ b/code_CUDA/cg_gpu.cu	(date 1670930222646)
+@@ -98,66 +98,63 @@
+     double rsnew = 0.;
+     int k = 0;
+     for (; k < m_n; ++k) {
+-        std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);
+-        // rsold = rsnew;
+-        if (conv) break;
+-        rsold = rsnew;
+-    }
+-
+-    if (DEBUG) {
+-        matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);
+-        cudaDeviceSynchronize();
+-        vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);
+-        scalar_product<<<grid_size, block_size>>>(r, r, rsold);
+-        scalar_product<<<grid_size, block_size>>>(m_b, m_b, rsnew);
+-        auto res = rsold/rsnew;
+-        double norm_x = 0.;
+-        scalar_product<<<grid_size, block_size>>>(x, x, norm_x);
+-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+-                  << std::sqrt(rsold) << ", ||x|| = " << norm_x
+-                  << ", ||Ax - b||/||b|| = " << res << std::endl;
+-    }
+ 
+-    cudaFree(&r);
+-    cudaFree(&tmp);
+-    cudaFree(&p);
+-    cudaFree(&Ap);
+-}
+-
+-std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
+-                                                  double rsold, dim3 grid_size, dim3 block_size) {
+-    // Ap = A * p;
+-    bool conv = false;
+-    matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
+-    cudaDeviceSynchronize();
++        // Ap = A * p;
++        bool conv = false;
++        matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
++        cudaDeviceSynchronize();
+ 
+-    // alpha = rsold / (p' * Ap);
+-    double conj = 0.;
+-    scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
+-    cudaDeviceSynchronize();
+-    auto alpha = rsold / std::max(conj, rsold * NEARZERO);
++        // alpha = rsold / (p' * Ap);
++        double conj = 0.;
++        scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
++        cudaDeviceSynchronize();
++        auto alpha = rsold / std::max(conj, rsold * NEARZERO);
+ 
+-    // x = x + alpha * p;
+-    vector_sum<<<grid_size, block_size>>>(x, alpha, p);
+-    // r = r - alpha * Ap;
+-    vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
+-    cudaDeviceSynchronize();
++        // x = x + alpha * p;
++        vector_sum<<<grid_size, block_size>>>(x, alpha, p);
++        // r = r - alpha * Ap;
++        vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
++        cudaDeviceSynchronize();
+ 
+-    // rsnew = r' * r;
+-    double rsnew = 0.;
+-    scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
+-    cudaDeviceSynchronize();
++        // rsnew = r' * r;
++        double rsnew = 0.;
++        scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
++        cudaDeviceSynchronize();
+ 
+-    // if sqrt(rsnew) < 1e-10
+-    //   break;
+-    if (std::sqrt(rsnew) < m_tolerance)
+-        conv = true; // Convergence test
++        if (std::sqrt(rsnew) < m_tolerance)
++            break; // Convergence test
+ 
+-    auto beta = rsnew / rsold;
+-    // p = r + (rsnew / rsold) * p
+-    vector_sum<<<grid_size, block_size>>>(p, beta, r);
+-    cudaDeviceSynchronize();
++        auto beta = rsnew / rsold;
++        // p = r + (rsnew / rsold) * p
++        vector_sum<<<grid_size, block_size>>>(p, beta, r);
++        cudaDeviceSynchronize();
+ 
++        rsold = rsnew;
++    }
++
++    if (DEBUG) {
++        matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);
++        cudaDeviceSynchronize();
++        vector_sum<<<grid_size, block_size>>>(r, -1.0, m_b);
++        scalar_product<<<grid_size, block_size>>>(r, r, rsold);
++        scalar_product<<<grid_size, block_size>>>(m_b, m_b, rsnew);
++        auto res = rsold/rsnew;
++        double norm_x = 0.;
++        scalar_product<<<grid_size, block_size>>>(x, x, norm_x);
++        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
++                  << std::sqrt(rsold) << ", ||x|| = " << norm_x
++                  << ", ||Ax - b||/||b|| = " << res << std::endl;
++    }
++
++    cudaFree(&r);
++    cudaFree(&tmp);
++    cudaFree(&p);
++    cudaFree(&Ap);
++}
++
++std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
++                                                  double rsold, dim3 grid_size, dim3 block_size)
++
+     return std::make_tuple(rsnew, conv);
+ }
+ 
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"CMakeSettings\">\r\n    <configurations>\r\n      <configuration PROFILE_NAME=\"Debug\" ENABLED=\"true\" CONFIG_NAME=\"Debug\" />\r\n    </configurations>\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"94313744-0f7e-4cb8-ad26-8d225c1b01c0\" name=\"Changes\" comment=\"\" />\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"ClangdSettings\">\r\n    <option name=\"formatViaClangd\" value=\"false\" />\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"MarkdownSettingsMigration\">\r\n    <option name=\"stateVersion\" value=\"1\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"2ImFIxGCunlXAowFM2GG7TOme4f\" />\r\n  <component name=\"ProjectLevelVcsManager\">\r\n    <ConfirmationsSetting value=\"2\" id=\"Add\" />\r\n  </component>\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"ASKED_ADD_EXTERNAL_FILES\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.cidr.known.project.marker\" value=\"true\" />\r\n    <property name=\"WebServerToolWindowFactoryState\" value=\"false\" />\r\n    <property name=\"cf.first.check.clang-format\" value=\"false\" />\r\n    <property name=\"cidr.known.project.marker\" value=\"true\" />\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"94313744-0f7e-4cb8-ad26-8d225c1b01c0\" name=\"Changes\" comment=\"\" />\r\n      <created>1670778775654</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1670778775654</updated>\r\n      <workItem from=\"1670778777010\" duration=\"129000\" />\r\n      <workItem from=\"1670917905801\" duration=\"1344000\" />\r\n      <workItem from=\"1670921910073\" duration=\"1341000\" />\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"TypeScriptGeneratedFilesManager\">\r\n    <option name=\"version\" value=\"3\" />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <option name=\"ADD_EXTERNAL_FILES_SILENTLY\" value=\"true\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 08ca19c0fbc0e3d421645ed2d511ef4b318a39ce)
++++ b/.idea/workspace.xml	(date 1670930223132)
+@@ -6,7 +6,9 @@
+     </configurations>
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="94313744-0f7e-4cb8-ad26-8d225c1b01c0" name="Changes" comment="" />
++    <list default="true" id="94313744-0f7e-4cb8-ad26-8d225c1b01c0" name="Changes" comment="">
++      <change beforePath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" afterDir="false" />
++    </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
