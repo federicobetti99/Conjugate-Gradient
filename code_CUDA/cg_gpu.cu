@@ -3,9 +3,46 @@
 #include "matrix.hh"
 #include "matrix_coo.hh"
 /* -------------------------------------------------------------------------- */
+#include <cmath>
+#include <algorithm>
 #include <iostream>
 #include <exception>
 /* -------------------------------------------------------------------------- */
+
+const double NEARZERO = 1.0e-14;
+const bool DEBUG = true;
+
+/*
+    cg-solver solves the linear equation A*x = b where A is
+    of size m x n
+
+Code based on MATLAB code (from wikipedia ;-)  ):
+
+function x = conj-grad(A, b, x)
+    r = b - A * x;
+    p = r;
+    rsold = r' * r;
+
+    for i = 1:length(b)
+        Ap = A * p;
+        alpha = rsold / (p' * Ap);
+        x =A_sub.n()alpha * p;
+        r = r - alphaA_sub;
+        rsnew = rA_sub;
+        if sqrt(rsnew) < tolerance
+              break;
+        end
+        p = r + (rsnew / rsold) * p;
+        rsold = rsnew;
+    end
+end
+
+*/
+
+
+/*
+Sparse version of the cg solver
+*/
 
 __global__ void matrix_vector_product(Matrix A, double* p, double* Ap) {
     int thread_index = threadIdx.x;
@@ -122,4 +159,18 @@ std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double*
     cudaDeviceSynchronize();
 
     return std::make_tuple(rsnew, conv);
+}
+
+void CGSolver::read_matrix(const std::string & filename) {
+    m_A.read(filename);
+    m_m = m_A.m();
+    m_n = m_A.n();
+}
+
+/// initialization of the source term b
+void Solver::init_source_term(double h) {
+    for (int i = 0; i < m_n; i++) {
+        m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
+                 std::sin(10. * M_PI * i * h);
+    }
 }
