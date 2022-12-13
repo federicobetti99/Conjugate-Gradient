@@ -64,10 +64,46 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
     cudaMallocManaged(&rsnew, sizeof(double));
     int k = 0;
     for (; k < m_n; ++k) {
-        std::cout << "Entering loop" << std::endl;
-        std::tie(rsnew, conv) = cg_step_kernel(Ap, p, x, r, rsold, grid_size, block_size);
+        // Ap = A * p;
+        bool conv = false;
+        matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
+        cudaDeviceSynchronize();
+
+        std::cout << "First matrix vector product" << std::endl;
+
+        // alpha = rsold / (p' * Ap);
+        double* conj;
+        cudaMallocManaged(&conj, sizeof(double));
+        scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
+
+        std::cout << "First scalar product " << std::endl;
+
+        cudaDeviceSynchronize();
+        auto alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
+
+        // x = x + alpha * p;
+        vector_sum<<<grid_size, block_size>>>(x, alpha, p);
+        // r = r - alpha * Ap;
+        vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
+        cudaDeviceSynchronize();
+
+        std::cout << "Vector sums ok " << std::endl;
+
+        // rsnew = r' * r;
+        double* rsnew;
+        cudaMallocManaged(&rsnew, sizeof(double));
+        scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
+        cudaDeviceSynchronize();
+
+        if (std::sqrt(*rsnew) < m_tolerance)
+            break; // Convergence test
+
+        auto beta = *rsnew / *rsold;
+        // p = r + (rsnew / rsold) * p
+        vector_sum<<<grid_size, block_size>>>(p, beta, r);
+        cudaDeviceSynchronize();
+
         // rsold = rsnew;
-        if (conv) break;
         rsold = rsnew;
     }
 
@@ -94,46 +130,6 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
 
 std::tuple<double*, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double* r, double* x,
                                                   double* rsold, dim3 grid_size, dim3 block_size) {
-    // Ap = A * p;
-    bool conv = false;
-    matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap);
-    cudaDeviceSynchronize();
-
-    std::cout << "First matrix vector product" << std::endl;
-
-    // alpha = rsold / (p' * Ap);
-    double* conj;
-    cudaMallocManaged(&conj, sizeof(double));
-    scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
-
-    std::cout << "First scalar product " << std::endl;
-
-    cudaDeviceSynchronize();
-    auto alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
-
-    // x = x + alpha * p;
-    vector_sum<<<grid_size, block_size>>>(x, alpha, p);
-    // r = r - alpha * Ap;
-    vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, p);
-    cudaDeviceSynchronize();
-
-    std::cout << "Vector sums ok " << std::endl;
-
-    // rsnew = r' * r;
-    double* rsnew;
-    cudaMallocManaged(&rsnew, sizeof(double));
-    scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
-    cudaDeviceSynchronize();
-
-    // if sqrt(rsnew) < 1e-10
-    //   break;
-    if (std::sqrt(*rsnew) < m_tolerance)
-        conv = true; // Convergence test
-
-    auto beta = *rsnew / *rsold;
-    // p = r + (rsnew / rsold) * p
-    vector_sum<<<grid_size, block_size>>>(p, beta, r);
-    cudaDeviceSynchronize();
 
     return std::make_tuple(rsnew, conv);
 }
