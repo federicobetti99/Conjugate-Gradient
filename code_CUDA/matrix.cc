@@ -7,7 +7,7 @@ void Matrix::read(const std::string & fn) {
   MatrixCOO mat;
   mat.read(fn);
 
-  resize(mat.m(), mat.n());
+  set_problem_size(mat.m(), mat.n());
 
   for (int z = 0; z < mat.nz(); ++z) {
     auto i = mat.irn[z];
