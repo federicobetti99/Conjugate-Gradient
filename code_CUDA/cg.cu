@@ -1,7 +1,5 @@
 /* -------------------------------------------------------------------------- */
 #include "cg.hh"
-#include "matrix.hh"
-#include "matrix_coo.hh"
 /* -------------------------------------------------------------------------- */
 #include <iostream>
 #include <exception>
@@ -125,4 +123,20 @@ std::tuple<double, bool> CGSolver::cg_step_kernel(double* Ap, double* p, double*
     cudaDeviceSynchronize();
 
     return std::make_tuple(rsnew, conv);
+}
+
+void CGSolver::read_matrix(const std::string & filename) {
+  m_A.read(filename);
+  m_m = m_A.m();
+  m_n = m_A.n();
+}
+
+/*
+Initialization of the source term b
+*/
+void CGSolver::init_source_term(double h) {
+  for (int i = 0; i < m_n; i++) {
+    m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
+             std::sin(10. * M_PI * i * h);
+  }
 }

@@ -1,4 +1,6 @@
 #include <cblas.h>
+#include "matrix.hh"
+#include "matrix_coo.hh"
 #include <string>
 #include <vector>
 #include <tuple>
@@ -20,11 +22,8 @@ public:
     /// initialize source term
     void init_source_term(double h);
 
-    /// get submatrix for parallel computation
-    Matrix get_submatrix(int N_loc, int start_m);    
-
-    /// get subvector for parallel computation
-    std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
+    inline int m() const { return m_m; }
+    inline int n() const { return m_n; }
 
     /// solve linear system with iterative CG
     void kerneled_solve(double *x, dim3 block_size);
