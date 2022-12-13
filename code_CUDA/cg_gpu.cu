@@ -133,6 +133,7 @@ void CGSolver::kerneled_solve(double *x, dim3 block_size) {
         cudaDeviceSynchronize();
         rsold = rsnew;
     }
+    
 
     if (DEBUG) {
         matrix_vector_product<<<grid_size, block_size>>>(m_A, x, r);
