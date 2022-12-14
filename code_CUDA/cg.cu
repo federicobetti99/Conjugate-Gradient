@@ -48,6 +48,10 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&rsnew, m_n * sizeof(double));
     for (int i = 0; i < m_n; i++) rsnew[i] = 0.;
 
+    double* rsold;
+    cudaMallocManaged(&rsold, m_n * sizeof(double));
+    for (int i = 0; i < m_n; i++) rsold[i] = 0.;
+
     // r = b - A * x;
     matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
     cudaDeviceSynchronize();
@@ -60,10 +64,6 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     p = r;
     
     // rsold = r' * r;
-    double* rsold;
-    cudaMallocManaged(&rsold, m_n * sizeof(double));
-    for (int i = 0; i < m_n; i++) rsold[i] = 0.;
-
     scalar_product<<<grid_size, block_size>>>(r, p, rsold);
     cudaDeviceSynchronize();
     for (int i = 1; i < m_n; i++) *rsold += rsold[i];
@@ -122,7 +122,7 @@ void CGSolver::read_matrix(const std::string & filename) {
 Initialization of the source term b
 */
 void CGSolver::init_source_term(double h) {
-  cudaMallocManaged(&m_b, m_n*sizeof(double));
+  cudaMallocManaged(&m_b, m_n * sizeof(double));
   for (int i = 0; i < m_n; i++) {
     m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
              std::sin(10. * M_PI * i * h);
