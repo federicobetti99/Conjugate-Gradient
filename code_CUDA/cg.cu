@@ -42,13 +42,16 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
 
     double* conj;
     cudaMallocManaged(&conj, m_n * sizeof(double));
+    for (int i = 0; i < m_n; i++) conj[i] = 0.;
 
     double* rsnew;
     cudaMallocManaged(&rsnew, m_n * sizeof(double));
+    for (int i = 0; i < m_n; i++) rsnew[i] = 0.;
 
     // r = b - A * x;
     matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
     cudaDeviceSynchronize();
+
     r = m_b;
     vector_sum<<<grid_size, block_size>>>(r, -1., Ap);
     cudaDeviceSynchronize();
@@ -59,6 +62,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     // rsold = r' * r;
     double* rsold;
     cudaMallocManaged(&rsold, m_n * sizeof(double));
+    for (int i = 0; i < m_n; i++) rsold[i] = 0.;
 
     scalar_product<<<grid_size, block_size>>>(r, p, rsold);
     cudaDeviceSynchronize();

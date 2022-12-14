@@ -10,4 +10,4 @@ module load gcc cuda openblas
 
 make
 
-srun ./cgsolver lap2D_5pt_n100.mtx 64 1
+srun ./cgsolver lap2D_5pt_n100.mtx 16 1

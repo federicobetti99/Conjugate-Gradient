@@ -401,6 +401,7 @@ void CGSolverSparse::solve(int start_rows[],
         if (std::sqrt(rsnew) < m_tolerance)
             break; // Convergence test
 
+
         auto beta = rsnew / rsold;
         // p = r + (rsnew / rsold) * p;
         tmp_sub = r_sub;
