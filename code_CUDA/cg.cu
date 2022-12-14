@@ -34,15 +34,22 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&tmp, m_n * sizeof(double));
  
     for (int i = 0; i < m_n; i++) Ap[i] = 0.;
+    for (int i = 0; i < m_n; i++) tmp[i] = 0.;
 
     dim3 grid_size;
     grid_size.x = m_m/block_size.x;
     grid_size.y = 1;
 
+    double* conj;
+    cudaMallocManaged(&conj, m_n * sizeof(double));
+
+    double* rsnew;
+    cudaMallocManaged(&rsnew, m_n * sizeof(double));
+
     // r = b - A * x;
     matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
-    r = m_b;
     cudaDeviceSynchronize();
+    r = m_b;
     vector_sum<<<grid_size, block_size>>>(r, -1., Ap);
     cudaDeviceSynchronize();
 
@@ -52,6 +59,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     // rsold = r' * r;
     double* rsold;
     cudaMallocManaged(&rsold, m_n * sizeof(double));
+
     scalar_product<<<grid_size, block_size>>>(r, p, rsold);
     cudaDeviceSynchronize();
     for (int i = 1; i < m_n; i++) *rsold += rsold[i];
@@ -59,21 +67,16 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
-         
-        std::cout << "sqrt(Rsold) at the beginning of " << k << " iteration = " << std::sqrt(*rsold) << std::endl;
+
         // Ap = A * p
         matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n); 
         cudaDeviceSynchronize();        
 
         // alpha = rsold / (p' * Ap);
-        double* conj;
-        cudaMallocManaged(&conj, m_n * sizeof(double));
         scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
         cudaDeviceSynchronize();
         for (int i = 1; i < m_n; i++) *conj += conj[i];
-        auto alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
-
-        std::cout << "Alpha = " << alpha << std::endl;
+        double alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
         
         // x = x + alpha * p;
         vector_sum<<<grid_size, block_size>>>(x, alpha, p);
@@ -82,22 +85,18 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         cudaDeviceSynchronize();
 
         // rsnew = r' * r;
-        double* rsnew;
-        cudaMallocManaged(&rsnew, m_n * sizeof(double));
         scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
         cudaDeviceSynchronize();
         for (int i = 1; i < m_n; i++) *rsnew += rsnew[i]; 
 
         if (std::sqrt(*rsnew) < m_tolerance) break; // Convergence test
             
-        auto beta = *rsnew / *rsold;
+        double beta = *rsnew / *rsold;
         // p = r + (rsnew / rsold) * p
         tmp = r;
         vector_sum<<<grid_size, block_size>>>(tmp, beta, p);
         cudaDeviceSynchronize();
         p = tmp;
-      
-        std::cout << "sqrt(Rsnew) at the end of " << k << " iteration = " << std::sqrt(*rsnew) << std::endl;        
 
         *rsold = *rsnew;
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(*rsold) << std::endl;

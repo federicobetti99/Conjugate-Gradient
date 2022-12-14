@@ -8,8 +8,7 @@
   <component name="ChangeListManager">
     <list default="true" id="94313744-0f7e-4cb8-ad26-8d225c1b01c0" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.hh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg_gpu.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.cu" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.cu" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
