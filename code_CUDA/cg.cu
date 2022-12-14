@@ -18,7 +18,7 @@ __global__ void matrix_vector_product(double* A, double* p, double* Ap, int N) {
 
 __global__ void vector_sum(double* a, double alpha, double* b) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    a[i] += alpha * b[i];
+    a[i] = a[i] + alpha * b[i];
 }
 
 __global__ void scalar_product(double* a, double* b, double* result) {
@@ -34,7 +34,6 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&tmp, m_n * sizeof(double));
  
     for (int i = 0; i < m_n; i++) Ap[i] = 0.;
-    for (int i = 0; i < m_n; i++) tmp[i] = 0.;
 
     dim3 grid_size;
     grid_size.x = m_m/block_size.x;
@@ -51,7 +50,6 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     // r = b - A * x;
     matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
     cudaDeviceSynchronize();
-
     r = m_b;
     vector_sum<<<grid_size, block_size>>>(r, -1., Ap);
     cudaDeviceSynchronize();
@@ -85,7 +83,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         // x = x + alpha * p;
         vector_sum<<<grid_size, block_size>>>(x, alpha, p);
         // r = r - alpha * Ap;
-        vector_sum<<<grid_size, block_size>>>(r, -alpha, Ap);
+        vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, Ap);
         cudaDeviceSynchronize();
 
         // rsnew = r' * r;
