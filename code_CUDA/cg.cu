@@ -7,11 +7,11 @@
 
 const double NEARZERO = 1.0e-14;
 
-__global__ void matrix_vector_product(Matrix A, double* p, double* Ap, int N) {
+__global__ void matrix_vector_product(double* A, double* p, double* Ap, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     double tmp = 0.;
     for (unsigned int j = 0; j < N; ++j) {
-        tmp += A(i, j) * p[j];
+        tmp += A[i * N + j] * p[j];
     }
     Ap[i] = tmp;
 }
@@ -21,7 +21,7 @@ __global__ void vector_sum(double* a, double alpha, double* b) {
     a[i] += alpha * b[i];
 }
 
-__global__ void scalar_product(double* a, double* b, double* result, int N) {
+__global__ void scalar_product(double* a, double* b, double* result) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     result[i] = a[i] * b[i];
 }
@@ -34,19 +34,14 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&tmp, m_n * sizeof(double));
  
     for (int i = 0; i < m_n; i++) Ap[i] = 0.;
-    for (int i = 0; i < m_n; i++) tmp[i] = 0.;
-
-    double* rsnew;
-    cudaMallocManaged(&rsnew, m_n * sizeof(double));
 
     dim3 grid_size;
     grid_size.x = m_m/block_size.x;
     grid_size.y = 1;
 
     // r = b - A * x;
-    matrix_vector_product<<<grid_size, block_size>>>(m_A, x, Ap, m_n);
+    matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
     r = m_b;
-    matrix_vector_product<<<grid_size, block_size>>>(m_A, x, Ap);
     cudaDeviceSynchronize();
     vector_sum<<<grid_size, block_size>>>(r, -1., Ap);
     cudaDeviceSynchronize();
@@ -57,24 +52,28 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     // rsold = r' * r;
     double* rsold;
     cudaMallocManaged(&rsold, m_n * sizeof(double));
-    scalar_product<<<grid_size, block_size>>>(r, p, rsold, m_n);
+    scalar_product<<<grid_size, block_size>>>(r, p, rsold);
     cudaDeviceSynchronize();
-    for (int i = 1; i < m_n; i++) rsold[0] += rsold[i];
+    for (int i = 1; i < m_n; i++) *rsold += rsold[i];
 
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
          
+        std::cout << "sqrt(Rsold) at the beginning of " << k << " iteration = " << std::sqrt(*rsold) << std::endl;
         // Ap = A * p
-        matrix_vector_product<<<grid_size, block_size>>>(m_A, p, Ap, m_n); 
+        matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n); 
+        cudaDeviceSynchronize();        
 
         // alpha = rsold / (p' * Ap);
         double* conj;
         cudaMallocManaged(&conj, m_n * sizeof(double));
-        scalar_product<<<grid_size, block_size>>>(p, Ap, conj, m_n);
+        scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
         cudaDeviceSynchronize();
-        for (int i = 1; i < m_n; i++) conj[0] += conj[i];
-        auto alpha = rsold[0] / std::max(conj[0], *rsold * NEARZERO);
+        for (int i = 1; i < m_n; i++) *conj += conj[i];
+        auto alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
+
+        std::cout << "Alpha = " << alpha << std::endl;
         
         // x = x + alpha * p;
         vector_sum<<<grid_size, block_size>>>(x, alpha, p);
@@ -83,20 +82,24 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         cudaDeviceSynchronize();
 
         // rsnew = r' * r;
-        scalar_product<<<grid_size, block_size>>>(r, r, rsnew, m_n);
+        double* rsnew;
+        cudaMallocManaged(&rsnew, m_n * sizeof(double));
+        scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
         cudaDeviceSynchronize();
-        for (int i = 1; i < m_n; i++) *rsnew += rsnew[i];
- 
+        for (int i = 1; i < m_n; i++) *rsnew += rsnew[i]; 
+
         if (std::sqrt(*rsnew) < m_tolerance) break; // Convergence test
             
-        auto beta = rsnew[0] / rsold[0];
+        auto beta = *rsnew / *rsold;
         // p = r + (rsnew / rsold) * p
         tmp = r;
         vector_sum<<<grid_size, block_size>>>(tmp, beta, p);
         cudaDeviceSynchronize();
         p = tmp;
-       
-        rsold[0] = rsnew[0];
+      
+        std::cout << "sqrt(Rsnew) at the end of " << k << " iteration = " << std::sqrt(*rsnew) << std::endl;        
+
+        *rsold = *rsnew;
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(*rsold) << std::endl;
     }
    

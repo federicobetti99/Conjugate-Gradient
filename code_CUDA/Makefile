@@ -1,6 +1,6 @@
 CXX=nvcc
 LD=${CXX}
-CXXFLAGS+=-Xcompiler="-Wall -Wextra -Werror" -std c++11 -O3
+CXXFLAGS+=-Xcompiler="-Wall -Wextra -Werror" -std c++11
 LDFLAGS+=-lm $(CXXFLAGS)
 
 OBJS=cg_main.o cg.o matrix.o matrix_coo.o mmio.o
