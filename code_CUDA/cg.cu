@@ -7,7 +7,7 @@
 
 const double NEARZERO = 1.0e-14;
 
-__global__ void matrix_vector_product(double* A, double* p, double* Ap, int N) {
+__global__ void MatVec(double* A, double* p, double* Ap, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     double tmp = 0.;
     for (unsigned int j = 0; j < N; ++j) {
@@ -16,12 +16,12 @@ __global__ void matrix_vector_product(double* A, double* p, double* Ap, int N) {
     Ap[i] = tmp;
 }
 
-__global__ void vector_sum(double* a, double alpha, double* b) {
+__global__ void sumVec(double* a, double alpha, double* b) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     a[i] = a[i] + alpha * b[i];
 }
 
-__global__ void scalar_product(double* a, double* b, double* result) {
+__global__ void Ddot(double* a, double* b, double* result) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     result[i] = a[i] * b[i];
 }
@@ -47,22 +47,22 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&rsnew, m_n * sizeof(double));
     for (int i = 0; i < m_n; i++) rsnew[i] = 0.;
 
+    double* rsold;
+    cudaMallocManaged(&rsold, m_n * sizeof(double));
+    for (int i = 0; i < m_n; i++) rsold[i] = 0.;
+
     // r = b - A * x;
-    matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
+    MatVec<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
     cudaDeviceSynchronize();
     r = m_b;
-    vector_sum<<<grid_size, block_size>>>(r, -1., Ap);
+    sumVec<<<grid_size, block_size>>>(r, -1., Ap);
     cudaDeviceSynchronize();
 
     // p = r
     p = r;
     
     // rsold = r' * r;
-    double* rsold;
-    cudaMallocManaged(&rsold, m_n * sizeof(double));
-    for (int i = 0; i < m_n; i++) rsold[i] = 0.;
-
-    scalar_product<<<grid_size, block_size>>>(r, p, rsold);
+    Ddot<<<grid_size, block_size>>>(r, p, rsold);
     cudaDeviceSynchronize();
     for (int i = 1; i < m_n; i++) *rsold += rsold[i];
 
@@ -71,23 +71,27 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     for (; k < m_n; ++k) {
 
         // Ap = A * p
-        matrix_vector_product<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n); 
+        MatVec<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n);
         cudaDeviceSynchronize();        
 
         // alpha = rsold / (p' * Ap);
-        scalar_product<<<grid_size, block_size>>>(p, Ap, conj);
+        Ddot<<<grid_size, block_size>>>(p, Ap, conj);
         cudaDeviceSynchronize();
         for (int i = 1; i < m_n; i++) *conj += conj[i];
         double alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
         
         // x = x + alpha * p;
-        vector_sum<<<grid_size, block_size>>>(x, alpha, p);
+        sumVec<<<grid_size, block_size>>>(x, alpha, p);
         // r = r - alpha * Ap;
+<<<<<<< HEAD
         vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, Ap);
+=======
+        sumVec<<<grid_size, block_size>>>(r, -alpha, Ap);
+>>>>>>> 6528b4e0238ccb54bc76a43f25a517ec7c06b037
         cudaDeviceSynchronize();
 
         // rsnew = r' * r;
-        scalar_product<<<grid_size, block_size>>>(r, r, rsnew);
+        Ddot<<<grid_size, block_size>>>(r, r, rsnew);
         cudaDeviceSynchronize();
         for (int i = 1; i < m_n; i++) *rsnew += rsnew[i]; 
 
@@ -96,7 +100,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         double beta = *rsnew / *rsold;
         // p = r + (rsnew / rsold) * p
         tmp = r;
-        vector_sum<<<grid_size, block_size>>>(tmp, beta, p);
+        sumVec<<<grid_size, block_size>>>(tmp, beta, p);
         cudaDeviceSynchronize();
         p = tmp;
 
@@ -120,7 +124,7 @@ void CGSolver::read_matrix(const std::string & filename) {
 Initialization of the source term b
 */
 void CGSolver::init_source_term(double h) {
-  cudaMallocManaged(&m_b, m_n*sizeof(double));
+  cudaMallocManaged(&m_b, m_n * sizeof(double));
   for (int i = 0; i < m_n; i++) {
     m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
              std::sin(10. * M_PI * i * h);

@@ -12,7 +12,7 @@ public:
   	cudaMallocManaged(&m_a, m * n * sizeof(double));  
   }
 
-  void set_problem_size(int m, int n) {
+  void init_problem(int m, int n) {
     m_m = m;
     m_n = n;
     cudaMallocManaged(&m_a, m_m * m_n * sizeof(double));
