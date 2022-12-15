@@ -9,12 +9,10 @@ const double NEARZERO = 1.0e-14;
 
 __global__ void MatVec(int N, Matrix A, double* p, double* Ap) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    double tmp = 0.;
     if (i < N) {
         for (unsigned int j = 0; j < N; ++j) {
-            tmp += A(i, j) * p[j];
+            Ap[i] = Ap[i] + A(i, j) * p[j];
         }
-        Ap[i] = tmp;
     }
 }
 
