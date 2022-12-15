@@ -12,7 +12,7 @@ __global__ void MatVec(int N, Matrix A, double* p, double* Ap) {
     double tmp = 0.;
     if (i < N) {
         for (unsigned int j = 0; j < N; ++j) {
-            tmp += A[i * N + j] * p[j];
+            tmp += A(i, j) * p[j];
         }
         Ap[i] = tmp;
     }
@@ -29,7 +29,7 @@ __global__ void fill(int N, double* a, double val) {
 }
 
 __global__ void copy(int N, double* a, double* b) {
-    int i = blockId.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) a[i] = b[i];
 }
 
