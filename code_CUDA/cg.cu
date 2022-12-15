@@ -7,7 +7,7 @@
 
 const double NEARZERO = 1.0e-14;
 
-__global__ void MatVec(int N, double* A, double* p, double* Ap) {
+__global__ void MatVec(int N, Matrix A, double* p, double* Ap) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     double tmp = 0.;
     if (i < N) {
