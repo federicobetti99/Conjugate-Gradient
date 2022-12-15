@@ -5,7 +5,7 @@
 
 void Matrix::read(const std::string & fn) {
   MatrixCOO mat;
-  mat.read(fn);
+  mat.read(fn);   
 
   init_problem(mat.m(), mat.n());
 

@@ -38,12 +38,11 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
  
     for (int i = 0; i < m_n; i++) Ap[i] = 0.;
 
-    double *conj, *rsnew, *rsold, *alpha, *beta;
-    cudaMallocManaged(&conj, sizeof(double));
-    cudaMallocManaged(&rsnew, sizeof(double));
-    cudaMallocManaged(&rsold, sizeof(double));
-    cudaMallocManaged(&alpha, sizeof(double));
-    cudaMallocManaged(&beta, sizeof(double));
+    double conj, rsnew, rsold;
+    double *conj_, *rsnew_, *rsold_;
+    cudaMallocManaged(&conj_, sizeof(double));
+    cudaMallocManaged(&rsnew_, sizeof(double));
+    cudaMallocManaged(&rsold_, sizeof(double));
 
     dim3 grid_size;
     grid_size.x = m_m/block_size.x;
@@ -62,38 +61,42 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     p = r;
     
     // rsold = r' * r;
-    cublasDdot(h, m_n, r, 1, p, 1, rsold);
+    cublasDdot(h, m_n, r, 1, p, 1, rsold_);
+    cudaMemcpy(&rsold, rsold_, sizeof(double), cudaMemcpyDeviceToHost);
 
     // for i = 1:length(b)
     int k = 0;
-    for (; k < m_n; ++k) {
+    for (; k < m_n; ++k) { 
 
         // Ap = A * p;
         MatVec<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n);        
 
         // alpha = rsold / (p' * Ap);
-        cublasDdot(h, m_n, p, 1, Ap, 1, conj);
-        scalarDivide<<<1, 1>>>(*rsold, std::max(*conj, *rsold * NEARZERO), alpha);
+        cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
+        cudaMemcpy(&conj, conj_, sizeof(double), cudaMemcpyDeviceToHost);
+
+        double alpha = rsold / std::max(conj, rsold * NEARZERO);
         
         // x = x + alpha * p;
-        sumVec<<<grid_size, block_size>>>(x, *alpha, p);
+        sumVec<<<grid_size, block_size>>>(x, alpha, p);
 
         // r = r - alpha * Ap;
-        sumVec<<<grid_size, block_size>>>(r, -*alpha, Ap);
+        sumVec<<<grid_size, block_size>>>(r, -alpha, Ap);
 
         // rsnew = r' * r;
-        cublasDdot(h, m_n, r, 1, r, 1, rsnew);
-        cudaDeviceSynchronize();
+        cublasDdot(h, m_n, r, 1, r, 1, rsnew_);
+        cudaMemcpy(&rsnew, rsnew_, sizeof(double), cudaMemcpyDeviceToHost);
         
-        if (std::sqrt(*rsnew) < m_tolerance) break; // Convergence test
+        if (std::sqrt(rsnew) < m_tolerance) break; // Convergence test
             
         // p = r + (rsnew / rsold) * p;
-        scalarDivide<<<1, 1>>>(*rsnew, *rsold, beta);
-        sumVec<<<grid_size, block_size>>>(p, *beta-1., p);
-        sumVec<<<grid_size, block_size>>>(p, 1., r);
+        double beta = rsnew / rsold;
+        tmp = r;
+        sumVec<<<grid_size, block_size>>>(tmp, beta, p);
+        p = tmp;
         
-        scalarCopy<<<1, 1>>>(rsold, rsnew);
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(*rsold) << std::endl;
+        rsold = rsnew;
+        std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
     }
    
     cudaFree(&r);

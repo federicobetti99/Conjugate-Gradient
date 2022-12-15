@@ -46,6 +46,7 @@ int main(int argc, char ** argv) {
     // initialize solution vector
     double *x_d;
     cudaMallocManaged(&x_d, n*sizeof(double));
+    for (int i = 0; i < n; i++) x_d[i] = 0.;
 
     // solve and print statistics
     auto t1 = clk::now();
