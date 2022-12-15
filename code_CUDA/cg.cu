@@ -34,6 +34,7 @@ __global__ void copy(int N, double* a, double* b) {
 }
 
 void CGSolver::kerneled_solve(double* x, dim3 block_size) {
+
     double *r;
     double *p;
     double *Ap;
@@ -50,24 +51,23 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&rsnew_, sizeof(double));
     cudaMallocManaged(&rsold_, sizeof(double));
 
+    // define grid size
     dim3 grid_size;
     grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
     grid_size.y = 1;
 
+    // initialize cublas handle
     cublasHandle_t h;
     cublasCreate(&h);
 
+    // initialize vectors
     fill<<<grid_size, block_size>>>(m_n,  x, 0.0);
     fill<<<grid_size, block_size>>>(m_n, Ap, 0.0);
-    cudaDeviceSynchronize();
 
     // r = b - A * x;
     MatVec<<<grid_size, block_size>>>(m_n, m_A, x, Ap);
-    cudaDeviceSynchronize();
     copy<<<grid_size, block_size>>>(m_n, r, m_b);
-    cudaDeviceSynchronize();
     sumVec<<<grid_size, block_size>>>(m_n, 1., r, -1., Ap);
-    cudaDeviceSynchronize();
 
     // p = r
     copy<<<grid_size, block_size>>>(m_n, p, r);
@@ -87,7 +87,6 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         // alpha = rsold / (p' * Ap);
         cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
         cudaMemcpy(&conj, conj_, sizeof(double), cudaMemcpyDeviceToHost);
-
         double alpha = rsold / std::max(conj, rsold * NEARZERO);
         
         // x = x + alpha * p;
@@ -99,13 +98,17 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         // rsnew = r' * r;
         cublasDdot(h, m_n, r, 1, r, 1, rsnew_);
         cudaMemcpy(&rsnew, rsnew_, sizeof(double), cudaMemcpyDeviceToHost);
+
+        // synchronize to be sure about computation of the residual
+        cudaDeviceSynchronize();
         
         if (std::sqrt(rsnew) < m_tolerance) break; // Convergence test
             
         // p = r + (rsnew / rsold) * p;
         double beta = rsnew / rsold;
         sumVec<<<grid_size, block_size>>>(m_n, beta, p, 1., r);
-        
+
+        // prepare next iteration and print statistics
         rsold = rsnew;
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
     }
