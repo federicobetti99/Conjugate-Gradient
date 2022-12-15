@@ -7,36 +7,42 @@
 
 const double NEARZERO = 1.0e-14;
 
-__global__ void MatVec(double* A, double* p, double* Ap, int N) {
+__global__ void MatVec(int N, double* A, double* p, double* Ap) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     double tmp = 0.;
-    for (unsigned int j = 0; j < N; ++j) {
-        tmp += A[i * N + j] * p[j];
+    if (i < N) {
+        for (unsigned int j = 0; j < N; ++j) {
+            tmp += A[i * N + j] * p[j];
+        }
+        Ap[i] = tmp;
     }
-    Ap[i] = tmp;
 }
 
-__global__ void sumVec(double* a, double alpha, double* b) {
+__global__ void sumVec(int N, double alpha, double* a, double beta, double* b) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    a[i] = a[i] + alpha * b[i];
+    if (i < N) a[i] = a[i] + alpha * b[i];
 }
 
-__global__ void scalarCopy(double* a, double* b) {
-    *a = *b;
+__global__ void fill(int N, double* a, double val) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < N) a[i] = val;
 }
 
-__global__ void scalarDivide(double num, double denom, double* res)  {
-    *res = num / denom;
-}  
+__global__ void copy(int N, double* a, double* b) {
+    int i = blockId.x * blockDim.x + threadIdx.x;
+    if (i < N) a[i] = b[i];
+}
 
 void CGSolver::kerneled_solve(double* x, dim3 block_size) {
-    double *r, *p, *Ap, *tmp;
+    double *r;
+    double *p;
+    double *Ap;
+    double *tmp;
+
     cudaMallocManaged(&r, m_n * sizeof(double));
     cudaMallocManaged(&p, m_n * sizeof(double));
     cudaMallocManaged(&Ap, m_n * sizeof(double));
     cudaMallocManaged(&tmp, m_n * sizeof(double));
- 
-    for (int i = 0; i < m_n; i++) Ap[i] = 0.;
 
     double conj, rsnew, rsold;
     double *conj_, *rsnew_, *rsold_;
@@ -45,17 +51,23 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&rsold_, sizeof(double));
 
     dim3 grid_size;
-    grid_size.x = m_m/block_size.x;
+    grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
     grid_size.y = 1;
 
     cublasHandle_t h;
     cublasCreate(&h);
 
+    fill<<<grid_size, block_size>>>(m_n,  x, 0.0);
+    fill<<<grid_size, block_size>>>(m_n, Ap, 0.0);
+    cudaDeviceSynchronize();
+
     // r = b - A * x;
     MatVec<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
     cudaDeviceSynchronize();
-    r = m_b;
-    sumVec<<<grid_size, block_size>>>(r, -1., Ap);
+    copy<<<grid_size, block_size>>>(m_n, r, m_b);
+    cudaDeviceSynchronize();
+    sumVec<<<grid_size, block_size>>>(m_n, 1., r, -1., Ap);
+    cudaDeviceSynchronize();
 
     // p = r
     p = r;
@@ -69,7 +81,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     for (; k < m_n; ++k) { 
 
         // Ap = A * p;
-        MatVec<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n);        
+        fill<<<grid_size, block_size>>>(m_n, Ap, 0.0);
+        MatVec<<<grid_size, block_size>>>(m_n, m_A, p, Ap);
 
         // alpha = rsold / (p' * Ap);
         cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
@@ -78,10 +91,10 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         double alpha = rsold / std::max(conj, rsold * NEARZERO);
         
         // x = x + alpha * p;
-        sumVec<<<grid_size, block_size>>>(x, alpha, p);
+        sumVec<<<grid_size, block_size>>>(m_n, 1., x, alpha, p);
 
         // r = r - alpha * Ap;
-        sumVec<<<grid_size, block_size>>>(r, -alpha, Ap);
+        sumVec<<<grid_size, block_size>>>(m_n, 1., r, -alpha, Ap);
 
         // rsnew = r' * r;
         cublasDdot(h, m_n, r, 1, r, 1, rsnew_);
@@ -91,9 +104,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
             
         // p = r + (rsnew / rsold) * p;
         double beta = rsnew / rsold;
-        tmp = r;
-        sumVec<<<grid_size, block_size>>>(tmp, beta, p);
-        p = tmp;
+        sumVec<<<grid_size, block_size>>>(m_n, beta, p, 1., r);
         
         rsold = rsnew;
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
