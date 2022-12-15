@@ -113,7 +113,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
 
     if (DEBUG) {
         fill<<<grid_size, block_size>>>(m_n, r, 0.0);
-        matVec<<<grid_size, block_size>>>(m_n, m_A, x, r);
+        MatVec<<<grid_size, block_size>>>(m_n, m_A, x, r);
         sumVec<<<grid_size, block_size>>>(m_n, 1., r, -1., m_b);
         double* num_;
         double* denom_;
@@ -121,8 +121,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
         cudaMallocManaged(&denom_, sizeof(double));
         double num = 0.;
         double denom = 0.;
-        cublasDdot(h, m_n, r, 1, r, 1, num);
-        cublasDdot(h, m_n, m_b, 1, m_b, 1, denom);
+        cublasDdot(h, m_n, r, 1, r, 1, num_);
+        cublasDdot(h, m_n, m_b, 1, m_b, 1, denom_);
         cudaMemcpy(&num, num_, sizeof(double), cudaMemcpyDeviceToHost);
         cudaMemcpy(&denom, denom_, sizeof(double), cudaMemcpyDeviceToHost);
         auto res = num / denom;
