@@ -10,13 +10,8 @@ module load gcc cuda openblas
 
 make
 
-srun ./cgsolver lap2D_5pt_n100.mtx  2  1  ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  4  1  ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  8  1  ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  16 1  ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  32 1  ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  64 1  ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  128 1 ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  256 1 ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx  512 1 ../results/CUDA.txt
-srun ./cgsolver lap2D_5pt_n100.mtx 1024 1 ../results/CUDA.txt
+rm ../results/CUDA.txt
+
+for N in 2 4 8 16 32 64 128 256 512 1024; do
+  srun ./cgsolver lap2D_5pt_n100.mtx  $N  1  ../results/CUDA.txt
+done

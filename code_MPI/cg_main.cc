@@ -60,7 +60,7 @@ int main(int argc, char ** argv) {
 	    solver.reduce_problem(N_sub);
     }
 
-    if (argc >= 4) std::string OUTPUT_FILE(argv[3]);
+    std::string OUTPUT_FILE(argv[3]);
 
     // get size of the matrix
     solver.set_problem_size();
