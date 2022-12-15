@@ -34,7 +34,6 @@ __global__ void copy(int N, double* a, double* b) {
 }
 
 void CGSolver::kerneled_solve(double* x, dim3 block_size) {
-
     double *r;
     double *p;
     double *Ap;
