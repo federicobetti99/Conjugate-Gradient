@@ -62,7 +62,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaDeviceSynchronize();
 
     // r = b - A * x;
-    MatVec<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
+    MatVec<<<grid_size, block_size>>>(m_n, m_A, x, Ap);
     cudaDeviceSynchronize();
     copy<<<grid_size, block_size>>>(m_n, r, m_b);
     cudaDeviceSynchronize();
@@ -70,7 +70,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaDeviceSynchronize();
 
     // p = r
-    p = r;
+    copy<<<grid_size, block_size>>>(m_n, p, r);
     
     // rsold = r' * r;
     cublasDdot(h, m_n, r, 1, p, 1, rsold_);
@@ -78,7 +78,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
 
     // for i = 1:length(b)
     int k = 0;
-    for (; k < m_n; ++k) { 
+    for (; k < m_n; ++k) {
 
         // Ap = A * p;
         fill<<<grid_size, block_size>>>(m_n, Ap, 0.0);
