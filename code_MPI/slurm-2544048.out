@@ -1,3 +1,0 @@
-make: Nothing to be done for 'all'.
-/var/spool/slurmd/job2544048/slurm_script: line 9: syntax error near unexpected token `4000'
-/var/spool/slurmd/job2544048/slurm_script: line 9: `for N in 2000; 4000; 6000; 8000; 10000 do'
