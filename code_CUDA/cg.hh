@@ -6,6 +6,7 @@
 #include <tuple>
 #include <iostream>
 #include <cuda_runtime.h>
+#include "cublas_v2.h"
 
 #ifndef __CG_HH__
 #define __CG_HH__

@@ -145,7 +145,7 @@ void CGSolver::solve(int start_rows[],
 
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
-    std::vector<double> p = m_b;
+    std::vector<double> p(m_n);
 
     /// MPI: compute residual rank-wise and reduce
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);

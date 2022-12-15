@@ -40,16 +40,16 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     grid_size.y = 1;
 
     double* conj;
-    cudaMallocManaged(&conj, m_n * sizeof(double));
-    for (int i = 0; i < m_n; i++) conj[i] = 0.;
+    cudaMallocManaged(&conj, sizeof(double));
 
     double* rsnew;
-    cudaMallocManaged(&rsnew, m_n * sizeof(double));
-    for (int i = 0; i < m_n; i++) rsnew[i] = 0.;
+    cudaMallocManaged(&rsnew, sizeof(double));
 
     double* rsold;
-    cudaMallocManaged(&rsold, m_n * sizeof(double));
-    for (int i = 0; i < m_n; i++) rsold[i] = 0.;
+    cudaMallocManaged(&rsold, sizeof(double));
+
+    cublasHandle_t h;
+    cublasCreate(&h);
 
     // r = b - A * x;
     MatVec<<<grid_size, block_size>>>(m_A.data(), x, Ap, m_n);
@@ -62,39 +62,30 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     p = r;
     
     // rsold = r' * r;
-    Ddot<<<grid_size, block_size>>>(r, p, rsold);
-    cudaDeviceSynchronize();
-    for (int i = 1; i < m_n; i++) *rsold += rsold[i];
+    cublasDdot(h, m_n, r, 1, p, 1, rsold);
 
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_n; ++k) {
 
         // Ap = A * p
+	for (int i = 0; i < m_n; i++) Ap[i] = 0.;
         MatVec<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n);
         cudaDeviceSynchronize();        
 
         // alpha = rsold / (p' * Ap);
-        Ddot<<<grid_size, block_size>>>(p, Ap, conj);
-        cudaDeviceSynchronize();
-        for (int i = 1; i < m_n; i++) *conj += conj[i];
+        cublasDdot(h, m_n, p, 1, Ap, 1, conj);
         double alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
         
         // x = x + alpha * p;
         sumVec<<<grid_size, block_size>>>(x, alpha, p);
         // r = r - alpha * Ap;
-<<<<<<< HEAD
-        vector_sum<<<grid_size, block_size>>>(r, -1.0 * alpha, Ap);
-=======
         sumVec<<<grid_size, block_size>>>(r, -alpha, Ap);
->>>>>>> 6528b4e0238ccb54bc76a43f25a517ec7c06b037
         cudaDeviceSynchronize();
 
         // rsnew = r' * r;
-        Ddot<<<grid_size, block_size>>>(r, r, rsnew);
-        cudaDeviceSynchronize();
-        for (int i = 1; i < m_n; i++) *rsnew += rsnew[i]; 
-
+        cublasDdot(h, m_n, r, 1, r, 1, rsnew);
+        
         if (std::sqrt(*rsnew) < m_tolerance) break; // Convergence test
             
         double beta = *rsnew / *rsold;
@@ -112,6 +103,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaFree(&tmp);
     cudaFree(&p);
     cudaFree(&Ap);
+
+    cublasDestroy(h);
 }
 
 void CGSolver::read_matrix(const std::string & filename) {
