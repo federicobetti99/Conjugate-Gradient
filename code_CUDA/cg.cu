@@ -6,6 +6,7 @@
 /* -------------------------------------------------------------------------- */
 
 const double NEARZERO = 1.0e-14;
+const bool DEBUG = false;
 
 __global__ void MatVec(int N, Matrix A, double* p, double* Ap) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -107,7 +108,29 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
 
         // prepare next iteration and print statistics
         rsold = rsnew;
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
+        if (DEBUG) std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
+    }
+
+    if (DEBUG) {
+    fill<<<grid_size, block_size>>>(m_n, r, 0.0);
+    matVec<<<grid_size, block_size>>>(m_n, m_A, x, r);
+    sumVec<<<grid_size, block_size>>>(m_n, 1., r, -1., m_b);
+    double* num_;
+    double* denom_;
+    double num = 0.;
+    double denom = 0.;
+    cublasDdot(h, m_n, r, 1, r, 1, num);
+    cublasDdot(h, m_n, m_b, 1, m_b, 1, denom);
+    cudaMemcpy(&num, num_, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&denom, denom_, sizeof(double), cudaMemcpyDeviceToHost);
+    auto res = num / denom;
+    double* nx_;
+    double nx = 0.;
+    cublasDdot(h, m_n, x, 1, x, 1, nx_);
+    cudaMemcpy(&nx, nx_, sizeof(double), cudaMemcpyDeviceToHost);
+    std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+              << std::sqrt(rsold) << ", ||x|| = " << nx
+              << ", ||Ax - b||/||b|| = " << res << std::endl;
     }
    
     cudaFree(&r);
