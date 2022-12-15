@@ -54,11 +54,13 @@ int main(int argc, char ** argv) {
     solver.read_matrix(argv[1]);
 
     if (argc >= 3) {
-	std::stringstream arg_0(argv[2]);
+	    std::stringstream arg_0(argv[2]);
     	int N_sub;
     	arg_0 >> N_sub;
-	solver.reduce_problem(N_sub);
-    } 
+	    solver.reduce_problem(N_sub);
+    }
+
+    if (argc >= 4) std::string OUTPUT_FILE(argv[3]);
 
     // get size of the matrix
     solver.set_problem_size();
@@ -87,7 +89,13 @@ int main(int argc, char ** argv) {
     second elapsed = clk::now() - t1;
     second max_time;
     MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n"; 
+    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
+
+    // save results to file
+    std::ofstream outfile;
+    outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
+    outfile << n << "," << psize << "," << elapsed.count() << std::endl;
+    outfile.close();
 
     /// MPI: Finalize
     MPI_Finalize();

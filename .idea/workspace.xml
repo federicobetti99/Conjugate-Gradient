@@ -7,10 +7,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="94313744-0f7e-4cb8-ad26-8d225c1b01c0" name="Changes" comment="...">
+      <change afterPath="$PROJECT_DIR$/.ipynb_checkpoints/plots-checkpoint.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/figures/CUDA.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Conjugate-Gradient-MPI.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_13_12_2022_12_17_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_13_12_2022_12_17__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_CUDA/.cg.cu.swp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.run" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.run" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/code_CUDA/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg_main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/slurm-1181554.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_MPI/cg.run" beforeDir="false" afterPath="$PROJECT_DIR$/code_MPI/cg.run" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_MPI/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_MPI/cg_main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plots.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/plots.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +67,7 @@
       <workItem from="1671044825372" duration="11000" />
       <workItem from="1671118422087" duration="1391000" />
       <workItem from="1671126159197" duration="44000" />
-      <workItem from="1671126220879" duration="87000" />
+      <workItem from="1671126220879" duration="1695000" />
     </task>
     <servers />
   </component>
