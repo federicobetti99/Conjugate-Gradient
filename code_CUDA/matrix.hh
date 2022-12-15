@@ -8,14 +8,12 @@
 
 class Matrix {
 public:
-  Matrix(int m = 0, int n = 0) : m_m(m), m_n(n) {
-  	cudaMallocManaged(&m_a, m * n * sizeof(double));  
-  }
+  Matrix(int m = 0, int n = 0) : m_m(m), m_n(n), m_a(nullptr) {}
 
-  void init_problem(int m, int n) {
+  void resize(int m, int n) {
     m_m = m;
     m_n = n;
-    cudaMallocManaged(&m_a, m_m * m_n * sizeof(double));
+    cudaMallocManaged(&m_a, m * n * sizeof(double));
   }
 
   __host__ __device__ inline double & operator()(int i, int j) { return m_a[i * m_n + j]; }
