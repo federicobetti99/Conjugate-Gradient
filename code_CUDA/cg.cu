@@ -20,7 +20,7 @@ __global__ void MatVec(int N, Matrix A, double* p, double* Ap) {
 
 __global__ void sumVec(int N, double alpha, double* a, double beta, double* b) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < N) a[i] = a[i] + alpha * b[i];
+    if (i < N) a[i] = alpha * a[i] + beta * b[i];
 }
 
 __global__ void fill(int N, double* a, double val) {
