@@ -38,24 +38,16 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
  
     for (int i = 0; i < m_n; i++) Ap[i] = 0.;
 
+    double *conj, *rsnew, *rsold, *alpha, *beta;
+    cudaMallocManaged(&conj, sizeof(double));
+    cudaMallocManaged(&rsnew, sizeof(double));
+    cudaMallocManaged(&rsold, sizeof(double));
+    cudaMallocManaged(&alpha, sizeof(double));
+    cudaMallocManaged(&beta, sizeof(double));
+
     dim3 grid_size;
     grid_size.x = m_m/block_size.x;
     grid_size.y = 1;
-
-    double* conj;
-    cudaMallocManaged(&conj, sizeof(double));
-
-    double* rsnew;
-    cudaMallocManaged(&rsnew, sizeof(double));
-
-    double* rsold;
-    cudaMallocManaged(&rsold, sizeof(double));
-
-    double* alpha;
-    cudaMallocManaged(&alpha, sizeof(double));
-
-    double* beta;
-    cudaMallocManaged(&beta, sizeof(double));
 
     cublasHandle_t h;
     cublasCreate(&h);
