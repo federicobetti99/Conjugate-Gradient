@@ -21,10 +21,13 @@ __global__ void sumVec(double* a, double alpha, double* b) {
     a[i] = a[i] + alpha * b[i];
 }
 
-__global__ void Ddot(double* a, double* b, double* result) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    result[i] = a[i] * b[i];
+__global__ void scalarCopy(double* a, double* b) {
+    *a = *b;
 }
+
+__global__ void scalarDivide(double num, double denom, double* res)  {
+    *res = num / denom;
+}  
 
 void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     double *r, *p, *Ap, *tmp;
@@ -48,6 +51,12 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     double* rsold;
     cudaMallocManaged(&rsold, sizeof(double));
 
+    double* alpha;
+    cudaMallocManaged(&alpha, sizeof(double));
+
+    double* beta;
+    cudaMallocManaged(&beta, sizeof(double));
+
     cublasHandle_t h;
     cublasCreate(&h);
 
@@ -56,7 +65,6 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaDeviceSynchronize();
     r = m_b;
     sumVec<<<grid_size, block_size>>>(r, -1., Ap);
-    cudaDeviceSynchronize();
 
     // p = r
     p = r;
@@ -68,34 +76,31 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     int k = 0;
     for (; k < m_n; ++k) {
 
-        // Ap = A * p
-	for (int i = 0; i < m_n; i++) Ap[i] = 0.;
-        MatVec<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n);
-        cudaDeviceSynchronize();        
+        // Ap = A * p;
+        MatVec<<<grid_size, block_size>>>(m_A.data(), p, Ap, m_n);        
 
         // alpha = rsold / (p' * Ap);
         cublasDdot(h, m_n, p, 1, Ap, 1, conj);
-        double alpha = *rsold / std::max(*conj, *rsold * NEARZERO);
+        scalarDivide<<<1, 1>>>(*rsold, std::max(*conj, *rsold * NEARZERO), alpha);
         
         // x = x + alpha * p;
-        sumVec<<<grid_size, block_size>>>(x, alpha, p);
+        sumVec<<<grid_size, block_size>>>(x, *alpha, p);
+
         // r = r - alpha * Ap;
-        sumVec<<<grid_size, block_size>>>(r, -alpha, Ap);
-        cudaDeviceSynchronize();
+        sumVec<<<grid_size, block_size>>>(r, -*alpha, Ap);
 
         // rsnew = r' * r;
         cublasDdot(h, m_n, r, 1, r, 1, rsnew);
+        cudaDeviceSynchronize();
         
         if (std::sqrt(*rsnew) < m_tolerance) break; // Convergence test
             
-        double beta = *rsnew / *rsold;
-        // p = r + (rsnew / rsold) * p
-        tmp = r;
-        sumVec<<<grid_size, block_size>>>(tmp, beta, p);
-        cudaDeviceSynchronize();
-        p = tmp;
-
-        *rsold = *rsnew;
+        // p = r + (rsnew / rsold) * p;
+        scalarDivide<<<1, 1>>>(*rsnew, *rsold, beta);
+        sumVec<<<grid_size, block_size>>>(p, *beta-1., p);
+        sumVec<<<grid_size, block_size>>>(p, 1., r);
+        
+        scalarCopy<<<1, 1>>>(rsold, rsnew);
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(*rsold) << std::endl;
     }
    

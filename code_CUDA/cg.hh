@@ -1,4 +1,3 @@
-#include <cblas.h>
 #include "matrix.hh"
 #include "matrix_coo.hh"
 #include <string>
