@@ -59,9 +59,6 @@ public:
    
     /// get submatrix for parallel computation
     Matrix get_submatrix(Matrix A, int N_loc, int start_m);    
-
-    /// get subvector for parallel computation
-    std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
     
     /// serial solver   
     virtual void serial_solve(std::vector<double> & x);    
