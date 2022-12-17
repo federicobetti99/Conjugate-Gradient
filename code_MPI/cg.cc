@@ -249,14 +249,6 @@ Matrix CGSolver::get_submatrix(Matrix A, int N_loc, int start_m) {
     return submatrix;
 }
 
-std::vector<double> CGSolver::get_subvector(std::vector<double> & arr, int N_loc, int start_m) {
-    std::vector<double> vector(N_loc);
-    for (int i = 0; i < N_loc; i++) {
-        vector[i] = arr[start_m + i];
-    }
-    return vector;
-}
-
 /*
 Sparse version of the cg solver
 */
