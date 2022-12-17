@@ -132,10 +132,9 @@ void CGSolver::solve(int start_rows[],
     std::vector<double> tmp_sub(N_loc);
 
     /// rank dependent variables
-    // compute subparts of solution and residual
-    std::vector<double> r_sub = get_subvector(m_b, num_rows[prank], start_rows[prank]);
-    std::vector<double> x_sub(m_n);
-    std::fill_n(x_sub.begin(), x_sub.size(), 0.);
+    // compute subparts of residual and get a copy of the solution on every rank
+    std::vector<double> r_sub(&m_b[start_rows[prank]], &m_b[start_rows[prank]+num_rows[prank]]);
+    std::vector<double> x_sub(&x[0], &x[x.size()]);
 
     /// compute residual
     // r = b - A * x;
