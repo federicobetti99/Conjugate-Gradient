@@ -55,11 +55,12 @@ public:
     /// reduce matrix size for weak scaling experiments
     void reduce_problem(int N_sub);
 
+    /// set problem size if the latter was readjusted e.g. for weak scaling experiments
     void set_problem_size();
    
     /// get submatrix for parallel computation
     Matrix get_submatrix(Matrix A, int N_loc, int start_m);    
-    
+
     /// serial solver   
     virtual void serial_solve(std::vector<double> & x);    
 
