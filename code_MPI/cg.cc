@@ -204,7 +204,7 @@ void CGSolver::solve(int start_rows[],
         MPI_Allgatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,
 		       &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
-        if (DEBUG) {
+        if (DEBUG && prank == 0) {
             std::cout << "\t[STEP " << k << "] residual = " << std::scientific
                       << std::sqrt(rsold) << std::endl;
         }
