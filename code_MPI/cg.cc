@@ -204,6 +204,11 @@ void CGSolver::solve(int start_rows[],
         /// MPI collective communication: gather p_sub in a global vector p from all ranks to all ranks
         MPI_Allgatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,
 		       &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+
+        if (DEBUG) {
+            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+                      << std::sqrt(rsold) << std::endl;
+        }
     }
 
     /// MPI: construct the solution from x_sub to x by stacking together the x_sub in precise order
