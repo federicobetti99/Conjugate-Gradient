@@ -54,10 +54,10 @@ int main(int argc, char ** argv) {
     solver.read_matrix(argv[1]);
 
     if (argc >= 3) {
-	    std::stringstream arg_0(argv[2]);
+	std::stringstream arg_0(argv[2]);
     	int N_sub;
     	arg_0 >> N_sub;
-	    solver.reduce_problem(N_sub);
+	solver.reduce_problem(N_sub);
     }
 
     std::string OUTPUT_FILE(argv[3]);

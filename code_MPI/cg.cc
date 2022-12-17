@@ -134,7 +134,8 @@ void CGSolver::solve(int start_rows[],
     /// rank dependent variables
     // compute subparts of solution and residual
     std::vector<double> r_sub = get_subvector(m_b, num_rows[prank], start_rows[prank]);
-    std::vector<double> x_sub = get_subvector(x,   num_rows[prank], start_rows[prank]);
+    std::vector<double> x_sub(m_n);
+    std::fill_n(x_sub.begin(), x_sub.size(), 0.);
 
     /// compute residual
     // r = b - A * x;
@@ -146,6 +147,9 @@ void CGSolver::solve(int start_rows[],
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
     std::vector<double> p(m_n);
+
+    /// MPI: first gather
+    MPI_Gatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,                                                                                                                  &p.front(), num_rows, start_rows, MPI_DOUBLE,                                                                                                                 0, MPI_COMM_WORLD);   
 
     /// MPI: compute residual rank-wise and reduce
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
