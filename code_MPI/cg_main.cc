@@ -49,15 +49,16 @@ int main(int argc, char ** argv) {
     return 1;
     }
 
-    // initialize solver and read matrix from file
+    // initialize solver and first rank is reading matrix from file
     CGSolver solver;
     solver.read_matrix(argv[1]);
 
+    // possibility of reducing problem size
     if (argc >= 3) {
-	std::stringstream arg_0(argv[2]);
+	    std::stringstream arg_0(argv[2]);
     	int N_sub;
     	arg_0 >> N_sub;
-	solver.reduce_problem(N_sub);
+	    solver.reduce_problem(N_sub);
     }
 
     std::string OUTPUT_FILE(argv[3]);

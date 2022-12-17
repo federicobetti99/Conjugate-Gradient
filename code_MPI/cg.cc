@@ -128,7 +128,7 @@ void CGSolver::solve(int start_rows[],
 
     // initialize conjugated direction, residual and solution for current prank
     int N_loc = A_sub.m();
-    std::vector<double> Ap(N_loc);
+    std::vector<double> Ap_sub(N_loc);
     std::vector<double> tmp_sub(N_loc);
 
     /// rank dependent variables
@@ -139,17 +139,18 @@ void CGSolver::solve(int start_rows[],
 
     /// compute residual
     // r = b - A * x;
-    std::fill_n(Ap.begin(), Ap.size(), 0.);
+    std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, A_sub.n(), 1., A_sub.data(), x.size(),
-                x.data(), 1, 0., Ap.data(), 1);
-    cblas_daxpy(r_sub.size(), -1., Ap.data(), 1, r_sub.data(), 1);
+                x.data(), 1, 0., Ap_sub.data(), 1);
+    cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
     /// copy p_sub into r_sub and initialize overall p vector
     std::vector<double> p_sub = r_sub;
     std::vector<double> p(m_n);
 
     /// MPI: first gather
-    MPI_Gatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,                                                                                                                  &p.front(), num_rows, start_rows, MPI_DOUBLE,                                                                                                                 0, MPI_COMM_WORLD);   
+    MPI_Allgatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,
+                   &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
     /// MPI: compute residual rank-wise and reduce
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, r_sub.data(), 1);
@@ -161,13 +162,13 @@ void CGSolver::solve(int start_rows[],
 
         /// MPI: gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
-        std::fill_n(Ap.begin(), Ap.size(), 0.);
+        std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, p.size(), 1., A_sub.data(), p.size(),
-                    p.data(), 1, 0., Ap.data(), 1);
+                    p.data(), 1, 0., Ap_sub.data(), 1);
 
         /// MPI: compute denominator for optimal step size rank-wise and reduce in-place
         // alpha = rsold / (p' * Ap);
-        auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap.data(), 1), rsold * NEARZERO);
+        auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap_sub.data(), 1), rsold * NEARZERO);
         MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         auto alpha = rsold / conj;
 
@@ -177,7 +178,7 @@ void CGSolver::solve(int start_rows[],
 
         /// MPI: compute residual rank-wise
         // r = r - alpha * Ap;
-        cblas_daxpy(r_sub.size(), -alpha, Ap.data(), 1, r_sub.data(), 1);
+        cblas_daxpy(r_sub.size(), -alpha, Ap_sub.data(), 1, r_sub.data(), 1);
 
         /// MPI: compute new residual norm rank-wise and reduce in-place
         // rsnew = r' * r;
@@ -411,17 +412,6 @@ void CGSolverSparse::solve(int start_rows[],
     MPI_Gatherv(&x_sub.front(), num_rows[prank], MPI_DOUBLE,
                 &x.front(), num_rows, start_rows, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
-
-    // if (DEBUG) {
-    //    m_A.mat_vec(x, r_sub);
-    //    cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
-    //    auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
-    //               std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
-    //    auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
-    //    std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-    //              << std::sqrt(rsold) << ", ||x|| = " << nx
-    //              << ", ||Ax - b||/||b|| = " << res << std::endl;
-    // }
 }
 
 MatrixCOO CGSolverSparse::get_submatrix(MatrixCOO A, int N_loc, int start_m) {
