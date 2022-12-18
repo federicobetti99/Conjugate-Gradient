@@ -97,7 +97,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
 
     // define grid size for matrix vector products, check on input is done in cg_main.cc
     dim3 matvec_grid_size;
-    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) dim3 matvec_grid_size = vec_grid_size;
+    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) matvec_grid_size = vec_grid_size;
     else {
         int blockRows = (int) ceil(m_m / (double) block_size.x);
         int blockCols = (int) ceil(m_n / (double) BLOCK_WIDTH);
