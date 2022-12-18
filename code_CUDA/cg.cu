@@ -8,6 +8,47 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = false;
 
+__global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
+    // get variables for loop
+    __shared__ int blockElt;
+    __shared__ int blockxInd;
+    __shared__ int blockyInd;
+    if (threadIdx.x == 0) {
+        if ((blockIdx.x + 1) * blockDim.x <= N)
+            blockElt = blockDim.x;
+        else blockElt = N % blockDim.x;
+        blockxInd = blockIdx.x * blockDim.x;
+        blockyInd = blockIdx.y * blockDim.y;
+    }
+
+    __syncthreads();
+
+    // copy section of b into shared mem
+    // use the first BLOCK_WIDTH of thread
+    __shared__ TYPE b[blockDim.x];
+
+    if (threadIdx.x < blockElt)
+        b[threadIdx.x] = in[blockxInd + threadIdx.x];
+
+    __syncthreads();
+
+    // summing variable
+    double csum = 0.;
+    int threadyInd = blockyInd + threadIdx.x;
+
+    // make sure we are inside the matrix vertically
+    if (threadyInd < N) {
+
+        // go through the threads vertically and sum them into a variable
+        for (int i = 0; i < blockElt; i++)
+            cSum += b[i] * A((blockxInd + i) * (matrixHeight), threadyInd);
+
+        // atomic add these variables to the corresponding c index
+        atomicAdd(Ap + threadyInd, cSum);
+    }
+
+}
+
 __global__ void MatVec(int N, Matrix A, double* p, double* Ap) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
