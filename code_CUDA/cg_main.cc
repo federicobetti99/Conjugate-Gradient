@@ -32,7 +32,12 @@ int main(int argc, char ** argv) {
         }
     }
 
-    std::string OUTPUT_FILE(argv[4]);
+    std::string KERNEL_TYPE(argv[4]);
+    if (strcmp(KERNEL_TYPE.c_str(), "NAIVE") && strcmp(KERNEL_TYPE.c_str(), "EFFICIENT")) {
+        std::cout << "Please, pass as third argument NAIVE or EFFICIENT\n\n" << std::endl;
+        return -1;
+    }
+    std::string OUTPUT_FILE(argv[5]);
 
     // initialize solver and read matrix from file
     CGSolver solver;
@@ -51,7 +56,7 @@ int main(int argc, char ** argv) {
 
     // solve and print statistics
     auto t1 = clk::now();
-    solver.kerneled_solve(x_d, block_size);
+    solver.kerneled_solve(x_d, block_size, KERNEL_TYPE);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 

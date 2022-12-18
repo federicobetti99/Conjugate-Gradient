@@ -74,7 +74,7 @@ __global__ void copy(int N, double* a, double* b) {
     if (i < N) a[i] = b[i];
 }
 
-void CGSolver::kerneled_solve(double* x, dim3 block_size) {
+void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYPE) {
     double *r;
     double *p;
     double *Ap;
@@ -96,15 +96,13 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     vec_grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
     vec_grid_size.y = 1;
 
-    // define grid size for matrix vector products
+    // define grid size for matrix vector products, check on input is done in cg_main.cc
     dim3 matvec_grid_size;
-#ifdef (PER_ROW)
-    matvec_grid_size = vec_grid_size;
-#else
-    matvec_grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
-    matvec_grid_size.y = m_n/block_size.y + (m_n % block_size.y == 0 ? 0 : 1);
-#endif
-
+    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) matvec_grid_size = vec_grid_size;
+    else {
+        matvec_grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
+        matvec_grid_size.y = m_n/block_size.y + (m_n % block_size.y == 0 ? 0 : 1);
+    }
     // initialize cublas handle
     cublasHandle_t h;
     cublasCreate(&h);
