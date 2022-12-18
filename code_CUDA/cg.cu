@@ -7,6 +7,7 @@
 
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = false;
+#define PER_ROW
 
 __global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
     // get variables for loop
@@ -90,21 +91,30 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
     cudaMallocManaged(&rsnew_, sizeof(double));
     cudaMallocManaged(&rsold_, sizeof(double));
 
-    // define grid size
-    dim3 grid_size;
-    grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
-    grid_size.y = 1;
+    // define grid size for linear combination of vectors
+    dim3 vec_grid_size;
+    vec_grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
+    vec_grid_size.y = 1;
+
+    // define grid size for matrix vector products
+    dim3 matvec_grid_size;
+#ifdef (PER_ROW)
+    matvec_grid_size = vec_grid_size;
+#else
+    matvec_grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
+    matvec_grid_size.y = m_n/block_size.y + (m_n % block_size.y == 0 ? 0 : 1);
+#endif
 
     // initialize cublas handle
     cublasHandle_t h;
     cublasCreate(&h);
 
     // initialize vectors
-    fill<<<grid_size, block_size>>>(m_n,  x, 0.0);
-    fill<<<grid_size, block_size>>>(m_n, Ap, 0.0);
+    fill<<<vec_grid_size, vec_block_size>>>(m_n,  x, 0.0);
+    fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
     // r = b - A * x;
-    MatVec<<<grid_size, block_size>>>(m_n, m_A, x, Ap);
+    MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, x, Ap);
     copy<<<grid_size, block_size>>>(m_n, r, m_b);
     sumVec<<<grid_size, block_size>>>(m_n, 1., r, -1., Ap);
 
@@ -121,7 +131,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size) {
 
         // Ap = A * p;
         fill<<<grid_size, block_size>>>(m_n, Ap, 0.0);
-        MatVec<<<grid_size, block_size>>>(m_n, m_A, p, Ap);
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, p, Ap);
 
         // alpha = rsold / (p' * Ap);
         cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
