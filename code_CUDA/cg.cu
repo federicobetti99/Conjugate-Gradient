@@ -81,8 +81,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
         else A_test[i] = 1.;
     }
     double* x_test;
-    for (int i = 0; i < 8; i++) x_test[i] = 0.5;
     cudaMallocManaged(&x_test, 8 * sizeof(double));
+    for (int i = 0; i < 8; i++) x_test[i] = 0.5;
     double* result;
     cudaMallocManaged(&result, 8 * sizeof(double));
     for (int i = 0; i < 8; i++) result[i] = 0.;
