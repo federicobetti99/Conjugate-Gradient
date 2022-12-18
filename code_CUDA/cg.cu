@@ -9,7 +9,7 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
+__global__ void MatMulKernel(const int N, double* A, double* p, double* Ap) {
     // get variables for loop
     __shared__ int blockElt;
     if (blockIdx.x * blockDim.x < N) blockElt = blockDim.x;
@@ -24,7 +24,7 @@ __global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += p[blockIdx.x * blockDim.x + i] * A(threadyInd, blockIdx.x * blockDim.x + i);
+            cSum += p[blockIdx.x * blockDim.x + i] * A(threadyInd * N + blockIdx.x * blockDim.x + i);
 
         // atomic add these variables to the corresponding output index
         atomicAdd(Ap + threadyInd, cSum);
@@ -85,6 +85,23 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
         matvec_grid_size.x = (int) ceil(m_n / (double) block_size.y);
         matvec_grid_size.y = (int) ceil(m_m / (double) block_size.x);
     }
+
+    double *A_test;
+    cudaMallocManaged(&A_test, 16 * sizeof(double));
+    for (int i = 0; i < 16; i++) A_test[i] = 2.;
+    double *x_test;
+    cudaMallocManaged(&x_test, 4 * sizeof(double));
+    for (int i = 0; i < 4; i++) A_test[i] = 1.;
+    double *result;
+    cudaMallocManaged(&result, 4 * sizeof(double));
+    dim3 test_block_size;
+    test_block_size.x = 2;
+    test_block_size.y = 1;
+    dim3 test_grid_size;
+    test_grid_size.x = 2;
+    test_grid_size.y = 2;
+    MatMulKernel<<<test_grid_size, test_block_size>>>(4, A_test, x_test, result);
+    for (int i = 0; i < 4; i++) std::cout << result[i] << std::endl;
     
     // initialize cublas handle
     cublasHandle_t h;
