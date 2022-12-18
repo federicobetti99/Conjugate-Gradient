@@ -18,7 +18,7 @@ __global__ void MatMulKernel(const int N, double* A, double* p, double* Ap) {
 
     // summing variable
     double cSum = 0.;
-    int threadyInd = blockIdx.x * blockDim.x + threadIdx.x;
+    int threadyInd = blockIdx.y * blockDim.x + threadIdx.x;
 
     // make sure we are inside the matrix vertically
     if (threadyInd < N) {
@@ -75,11 +75,11 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     cudaMallocManaged(&rsold_, sizeof(double));
 
     // define grid size for linear combination of vectors
-    dim3 vec_grid_size((int) ceil(m_m / (double) block_size.x), 1);
+    dim3 vec_grid_size((int) ceil(m_m / (double) block_size.x));
 
     // define grid size for matrix vector products, check on input is done in cg_main.cc
     dim3 matvec_grid_size;
-    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) dim3 matvec_grid_size(vec_grid_size.x, vec_grid_size.y);
+    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) dim3 matvec_grid_size = vec_grid_size;
     else {
         int blockRows = (int) ceil(m_m / (double) block_size.x);
         int blockCols = (int) ceil(m_n / (double) BLOCK_WIDTH);
