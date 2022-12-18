@@ -74,6 +74,24 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     cudaMallocManaged(&rsnew_, sizeof(double));
     cudaMallocManaged(&rsold_, sizeof(double));
 
+    double* A_test;
+    cudaMallocManaged(&A_test, 64 * sizeof(double));
+    for (int i = 0; i < 64; i++) {
+        if (i % 2 == 0) A_test[i] = 2.;
+        else A_test[i] = 1.;
+    }
+    double* x_test;
+    for (int i = 0; i < 8; i++) x_test[i] = 0.5;
+    cudaMallocManaged(&x_test, 8 * sizeof(double));
+    double* result;
+    cudaMallocManaged(&result, 8 * sizeof(double));
+    for (int i = 0; i < 8; i++) result[i] = 0.;
+    dim3 test_block_size(2, 1);
+    dim3 test_grid_size(8 / 2, 8 / 4);
+    MatMulKernel<<<test_grid_size, test_block_size>>>(8, A_test, x_test, result);
+    cudaDeviceSynchronize();
+    for (int i = 0; i < 8; i++) std::cout << result[i] << std::endl;
+
     // define grid size for linear combination of vectors
     dim3 vec_grid_size((int) ceil(m_m / (double) block_size.x));
 
