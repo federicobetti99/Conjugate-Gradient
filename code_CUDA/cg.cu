@@ -93,7 +93,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
     // r = b - A * x;
-    MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, x, Ap);
+    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, x, Ap);
+    else MatMulKernel(m_n, m_A, x, Ap);
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
     sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
 
@@ -110,7 +111,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, p, Ap);
+        if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, p, Ap);
+        else MatMulKernel(m_n, m_A, p, Ap);
 
         // alpha = rsold / (p' * Ap);
         cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
@@ -143,7 +145,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
 
     if (DEBUG) {
         fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);
-        MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A, x, r);
+        if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec(m_n, m_A, x, r);
+        else MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A, x, r);
         sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., m_b);
         double* num_;
         double* denom_;
