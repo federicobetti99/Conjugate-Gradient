@@ -6,43 +6,24 @@
 /* -------------------------------------------------------------------------- */
 
 const double NEARZERO = 1.0e-14;
-const bool DEBUG = false;
-#define PER_ROW
+const bool DEBUG = true;
 
-__global__ void MatMulKernel(const int N, const dim3 grid_size, const dim3 block_size, Matrix A, double* p, double* Ap) {
+__global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
     // get variables for loop
     __shared__ int blockElt;
-    __shared__ int blockxInd;
-    __shared__ int blockyInd;
-    if (threadIdx.x == 0) {
-        if ((blockIdx.x + 1) * blockDim.x <= N)
-            blockElt = blockDim.x;
-        else blockElt = N % blockDim.x;
-        blockxInd = blockIdx.x * blockDim.x;
-        blockyInd = blockIdx.y * blockDim.y;
-    }
-
-    __syncthreads();
-
-    // copy section of b into shared mem
-    // use the first BLOCK_WIDTH of thread
-    extern __shared__ double b[];
-
-    if (threadIdx.x < blockElt)
-        b[threadIdx.x] = p[blockxInd + threadIdx.x];
-
-    __syncthreads();
+    if ((blockIdx.x + 1) * blockDim.x <= N) blockElt = blockDim.x;
+    else blockElt = N % blockDim.x;
 
     // summing variable
     double cSum = 0.;
-    int threadyInd = blockyInd + threadIdx.x;
+    int threadyInd = blockIdx.y * blockDim.y + threadIdx.x;
 
     // make sure we are inside the matrix vertically
     if (threadyInd < N) {
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += b[i] * A((blockxInd + i) * N, threadyInd);
+            cSum += p[blockIdx.x * blockDim.x + i] * A(threadyInd, blockIdx.x * blockDim.x + i);
 
         // atomic add these variables to the corresponding c index
         atomicAdd(Ap + threadyInd, cSum);
@@ -108,16 +89,16 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     cublasCreate(&h);
 
     // initialize vectors
-    fill<<<vec_grid_size, vec_block_size>>>(m_n,  x, 0.0);
+    fill<<<vec_grid_size, block_size>>>(m_n,  x, 0.0);
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
     // r = b - A * x;
     MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, x, Ap);
-    copy<<<grid_size, block_size>>>(m_n, r, m_b);
-    sumVec<<<grid_size, block_size>>>(m_n, 1., r, -1., Ap);
+    copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
+    sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
 
     // p = r
-    copy<<<grid_size, block_size>>>(m_n, p, r);
+    copy<<<vec_grid_size, block_size>>>(m_n, p, r);
     
     // rsold = r' * r;
     cublasDdot(h, m_n, r, 1, p, 1, rsold_);
@@ -128,7 +109,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     for (; k < m_n; ++k) {
 
         // Ap = A * p;
-        fill<<<grid_size, block_size>>>(m_n, Ap, 0.0);
+        fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, p, Ap);
 
         // alpha = rsold / (p' * Ap);
@@ -137,10 +118,10 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
         double alpha = rsold / std::max(conj, rsold * NEARZERO);
         
         // x = x + alpha * p;
-        sumVec<<<grid_size, block_size>>>(m_n, 1., x, alpha, p);
+        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., x, alpha, p);
 
         // r = r - alpha * Ap;
-        sumVec<<<grid_size, block_size>>>(m_n, 1., r, -alpha, Ap);
+        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -alpha, Ap);
 
         // rsnew = r' * r;
         cublasDdot(h, m_n, r, 1, r, 1, rsnew_);
@@ -153,7 +134,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
             
         // p = r + (rsnew / rsold) * p;
         double beta = rsnew / rsold;
-        sumVec<<<grid_size, block_size>>>(m_n, beta, p, 1., r);
+        sumVec<<<vec_grid_size, block_size>>>(m_n, beta, p, 1., r);
 
         // prepare next iteration and print statistics
         rsold = rsnew;
@@ -161,9 +142,9 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     }
 
     if (DEBUG) {
-        fill<<<grid_size, block_size>>>(m_n, r, 0.0);
-        MatVec<<<grid_size, block_size>>>(m_n, m_A, x, r);
-        sumVec<<<grid_size, block_size>>>(m_n, 1., r, -1., m_b);
+        fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);
+        MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A, x, r);
+        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., m_b);
         double* num_;
         double* denom_;
         cudaMallocManaged(&num_, sizeof(double));
