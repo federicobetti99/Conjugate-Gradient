@@ -1,6 +1,7 @@
 /* -------------------------------------------------------------------------- */
 #include "cg.hh" 
 /* -------------------------------------------------------------------------- */
+#include <math.h>
 #include <iostream>
 #include <exception>
 /* -------------------------------------------------------------------------- */
@@ -11,7 +12,7 @@ const bool DEBUG = true;
 __global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
     // get variables for loop
     __shared__ int blockElt;
-    if ((blockIdx.x + 1) * blockDim.x <= N) blockElt = blockDim.x;
+    if (blockIdx.x * blockDim.x < N) blockElt = blockDim.x;
     else blockElt = N % blockDim.x;
 
     // summing variable
@@ -25,7 +26,7 @@ __global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
         for (int i = 0; i < blockElt; i++)
             cSum += p[blockIdx.x * blockDim.x + i] * A(threadyInd, blockIdx.x * blockDim.x + i);
 
-        // atomic add these variables to the corresponding c index
+        // atomic add these variables to the corresponding output index
         atomicAdd(Ap + threadyInd, cSum);
     }
 
@@ -74,16 +75,17 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
 
     // define grid size for linear combination of vectors
     dim3 vec_grid_size;
-    vec_grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
+    vec_grid_size.x = (int) ceil(m_m / (double) block_size.x);
     vec_grid_size.y = 1;
 
     // define grid size for matrix vector products, check on input is done in cg_main.cc
     dim3 matvec_grid_size;
     if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) matvec_grid_size = vec_grid_size;
     else {
-        matvec_grid_size.x = m_m/block_size.x + (m_m % block_size.x == 0 ? 0 : 1);
-        matvec_grid_size.y = m_n/block_size.y + (m_n % block_size.y == 0 ? 0 : 1);
+        matvec_grid_size.x = (int) ceil(m_n / (double) block_size.y);
+        matvec_grid_size.y = (int) ceil(m_m / (double) block_size.x);
     }
+    
     // initialize cublas handle
     cublasHandle_t h;
     cublasCreate(&h);
@@ -94,7 +96,9 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
 
     // r = b - A * x;
     if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, x, Ap);
-    else MatMulKernel(m_n, m_A, x, Ap);
+    else MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A, x, Ap);
+    cudaDeviceSynchronize();
+
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
     sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
 
@@ -112,7 +116,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, p, Ap);
-        else MatMulKernel(m_n, m_A, p, Ap);
+        else MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A, p, Ap);
+        cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
         cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
@@ -145,7 +150,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
 
     if (DEBUG) {
         fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);
-        if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec(m_n, m_A, x, r);
+        if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, x, r);
         else MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A, x, r);
         sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., m_b);
         double* num_;
@@ -165,8 +170,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
         cublasDdot(h, m_n, x, 1, x, 1, nx_);
         cudaMemcpy(&nx, nx_, sizeof(double), cudaMemcpyDeviceToHost);
         std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << nx
-                  << ", ||Ax - b||/||b|| = " << res << std::endl;
+                  << std::sqrt(rsold) << ", ||x|| = " << std::sqrt(nx)
+                  << ", ||Ax - b||/||b|| = " << std::sqrt(res) << std::endl;
     }
    
     cudaFree(&r);
