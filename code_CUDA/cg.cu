@@ -9,7 +9,7 @@ const double NEARZERO = 1.0e-14;
 const bool DEBUG = false;
 #define PER_ROW
 
-__global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
+__global__ void MatMulKernel(const int N, const dim3 grid_size, const dim3 block_size, Matrix A, double* p, double* Ap) {
     // get variables for loop
     __shared__ int blockElt;
     __shared__ int blockxInd;
@@ -26,15 +26,15 @@ __global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
 
     // copy section of b into shared mem
     // use the first BLOCK_WIDTH of thread
-    __shared__ TYPE b[blockDim.x];
+    extern __shared__ double b[];
 
     if (threadIdx.x < blockElt)
-        b[threadIdx.x] = in[blockxInd + threadIdx.x];
+        b[threadIdx.x] = p[blockxInd + threadIdx.x];
 
     __syncthreads();
 
     // summing variable
-    double csum = 0.;
+    double cSum = 0.;
     int threadyInd = blockyInd + threadIdx.x;
 
     // make sure we are inside the matrix vertically
@@ -42,7 +42,7 @@ __global__ void MatMulKernel(const int N, Matrix A, double* p, double* Ap) {
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += b[i] * A((blockxInd + i) * (matrixHeight), threadyInd);
+            cSum += b[i] * A((blockxInd + i) * N, threadyInd);
 
         // atomic add these variables to the corresponding c index
         atomicAdd(Ap + threadyInd, cSum);
