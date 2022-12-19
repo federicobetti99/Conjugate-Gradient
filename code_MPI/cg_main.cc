@@ -92,11 +92,13 @@ int main(int argc, char ** argv) {
     MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
 
-    // save results to file
-    std::ofstream outfile;
-    outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
-    outfile << n << "," << psize << "," << elapsed.count() << std::endl;
-    outfile.close();
+    if (prank == 0) {
+        // save results to file
+        std::ofstream outfile;
+        outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
+        outfile << n << "," << psize << "," << elapsed.count() << std::endl;
+        outfile.close();
+    }
 
     /// MPI: Finalize
     MPI_Finalize();
