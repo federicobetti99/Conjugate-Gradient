@@ -86,8 +86,8 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     double* result;
     cudaMallocManaged(&result, 8 * sizeof(double));
     for (int i = 0; i < 8; i++) result[i] = 0.;
-    dim3 test_block_size(2, 1);
-    dim3 test_grid_size(8 / 2, 8 / 4);
+    dim3 test_block_size(2);
+    dim3 test_grid_size(8 / 4, 8 / 2);
     MatMulKernel<<<test_grid_size, test_block_size>>>(8, A_test, x_test, result);
     cudaDeviceSynchronize();
     for (int i = 0; i < 8; i++) std::cout << result[i] << std::endl;

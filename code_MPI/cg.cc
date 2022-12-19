@@ -167,8 +167,9 @@ void CGSolver::solve(int start_rows[],
 
         /// MPI: compute denominator for optimal step size rank-wise and reduce in-place
         // alpha = rsold / (p' * Ap);
-        auto conj = std::max(cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap_sub.data(), 1), rsold * NEARZERO);
+        auto conj = cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap_sub.data(), 1);
         MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        auto conj = std::max(conj, rsold * NEARZERO);
         auto alpha = rsold / conj;
 
         /// MPI: compute update of x_sub rank-wise

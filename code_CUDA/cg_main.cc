@@ -15,22 +15,8 @@ static void usage(const std::string & prog_name) {
 
 int main(int argc, char ** argv) {
 
-    dim3 block_size;
-    if (argc >= 3) {
-        try {
-            block_size.x = std::stoi(argv[2]);
-        } catch(std::invalid_argument &) {
-            usage(argv[0]);
-        }
-    }
-
-    if (argc >= 4) {
-        try {
-            block_size.y = std::stoi(argv[3]);
-        } catch(std::invalid_argument &) {
-            usage(argv[0]);
-        }
-    }
+    int NUM_THREADS_PER_BLOCK = std::stoi(argv[2];
+    dim3 block_size(NUM_THREADS_PER_BLOCK);
 
     std::string KERNEL_TYPE(argv[4]);
     if (strcmp(KERNEL_TYPE.c_str(), "NAIVE") && strcmp(KERNEL_TYPE.c_str(), "EFFICIENT")) {
@@ -52,7 +38,7 @@ int main(int argc, char ** argv) {
 
     // initialize solution vector
     double *x_d;
-    cudaMallocManaged(&x_d, n*sizeof(double));
+    cudaMallocManaged(&x_d, n * sizeof(double));
 
     // solve and print statistics
     auto t1 = clk::now();
