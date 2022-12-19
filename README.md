@@ -1,4 +1,4 @@
-## Parallel and High Performance Computing Project
+# Parallel and High Performance Computing Project
 
 This repository contains the Conjugate Gradient
 implementation with MPI Interface and CUDA kernels. The
