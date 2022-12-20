@@ -60,12 +60,14 @@ __global__ void copy(int N, double* a, double* b) {
 void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYPE) {
     double *r;
     double *p;
-    double *Ap;
+    double *Ap1;
+    double *Ap2;
     double *tmp;
 
     cudaMallocManaged(&r, m_n * sizeof(double));
     cudaMallocManaged(&p, m_n * sizeof(double));
-    cudaMallocManaged(&Ap, m_n * sizeof(double));
+    cudaMallocManaged(&Ap1, m_n * sizeof(double));
+    cudaMallocManaged(&Ap2, m_n * sizeof(double));
     cudaMallocManaged(&tmp, m_n * sizeof(double));
 
     double conj, rsnew, rsold;
@@ -74,35 +76,9 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     cudaMallocManaged(&rsnew_, sizeof(double));
     cudaMallocManaged(&rsold_, sizeof(double));
 
-    double* A_test;
-    cudaMallocManaged(&A_test, 64 * sizeof(double));
-    for (int i = 0; i < 64; i++) {
-        if (i % 2 == 0) A_test[i] = 2.;
-        else A_test[i] = 1.;
-    }
-    double* x_test;
-    cudaMallocManaged(&x_test, 8 * sizeof(double));
-    for (int i = 0; i < 8; i++) x_test[i] = 0.5;
-    double* result;
-    cudaMallocManaged(&result, 8 * sizeof(double));
-    for (int i = 0; i < 8; i++) result[i] = 0.;
-    dim3 test_block_size(2);
-    dim3 test_grid_size(8 / 4, 8 / 2);
-    MatMulKernel<<<test_grid_size, test_block_size>>>(8, A_test, x_test, result);
-    cudaDeviceSynchronize();
-    for (int i = 0; i < 8; i++) std::cout << result[i] << std::endl;
-
     // define grid size for linear combination of vectors
     dim3 vec_grid_size((int) ceil(m_m / (double) block_size.x));
-
-    // define grid size for matrix vector products, check on input is done in cg_main.cc
-    dim3 matvec_grid_size;
-    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) matvec_grid_size = vec_grid_size;
-    else {
-        int blockRows = (int) ceil(m_m / (double) block_size.x);
-        int blockCols = (int) ceil(m_n / (double) BLOCK_WIDTH);
-        dim3 matvec_grid_size(blockCols, blockRows);
-    }
+    dim3 mat_vec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH), (int) ceil(m_m / (double) block_size.x));
     
     // initialize cublas handle
     cublasHandle_t h;
@@ -110,16 +86,21 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
 
     // initialize vectors
     fill<<<vec_grid_size, block_size>>>(m_n,  x, 0.0);
-    fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
-    cudaDeviceSynchronize();    
+    fill<<<vec_grid_size, block_size>>>(m_n, Ap1, 0.0);
+    fill<<<vec_grid_size, block_size>>>(m_n, Ap2, 0.0);
 
     // r = b - A * x;
-    if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, x, Ap);
-    else MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A.data(), x, Ap);
+    MatVec<<<vec_grid_size, block_size>>>(m_n, m_A, x, Ap1);
+    cudaDeviceSynchronize();
+    MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A.data(), x, Ap2);
     cudaDeviceSynchronize();
 
+    for (int i = 0; i < m_n; i++) {
+        if (std::abs(Ap1[i] - Ap2[i]) > m_tolerance) std::cout << "Found difference in two matvec kernels" << std::endl;
+    }
+
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
-    sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
+    sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap1);
 
     // p = r
     copy<<<vec_grid_size, block_size>>>(m_n, p, r);
@@ -133,15 +114,21 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
     for (; k < m_n; ++k) {
 
         // Ap = A * p;
-        fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
+        fill<<<vec_grid_size, block_size>>>(m_n, Ap1, 0.0);
+        fill<<<vec_grid_size, block_size>>>(m_n, Ap2, 0.0);
         cudaDeviceSynchronize();
 
-        if (!strcmp(KERNEL_TYPE.c_str(), "NAIVE")) MatVec<<<matvec_grid_size, block_size>>>(m_n, m_A, p, Ap);
-        else MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A.data(), p, Ap);
+        MatVec<<<vec_grid_size, block_size>>>(m_n, m_A, p, Ap1);
         cudaDeviceSynchronize();
+        MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, m_A.data(), p, Ap2);
+        cudaDeviceSynchronize();
+
+        for (int i = 0; i < m_n; i++) {
+            if (std::abs(Ap1[i] - Ap2[i]) > m_tolerance) std::cout << "Found difference in two matvec kernels" << std::endl;
+        }
 
         // alpha = rsold / (p' * Ap);
-        cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
+        cublasDdot(h, m_n, p, 1, Ap1, 1, conj_);
         cudaMemcpy(&conj, conj_, sizeof(double), cudaMemcpyDeviceToHost);
         double alpha = rsold / std::max(conj, rsold * NEARZERO);
         
@@ -149,7 +136,7 @@ void CGSolver::kerneled_solve(double* x, dim3 block_size, std::string KERNEL_TYP
         sumVec<<<vec_grid_size, block_size>>>(m_n, 1., x, alpha, p);
 
         // r = r - alpha * Ap;
-        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -alpha, Ap);
+        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -alpha, Ap1);
 
         // rsnew = r' * r;
         cublasDdot(h, m_n, r, 1, r, 1, rsnew_);
