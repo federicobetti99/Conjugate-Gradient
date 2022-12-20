@@ -26,7 +26,7 @@ public:
     inline int n() const { return m_n; }
 
     /// solve linear system with iterative CG
-    void kerneled_solve(double *x, dim3 block_size, std::string KERNEL_TYPE);
+    void solve(double *x, dim3 block_size, std::string KERNEL_TYPE, int BLOCK_WIDTH);
 
 protected:
     /// initialize m and n
