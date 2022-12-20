@@ -9,14 +9,14 @@ make
 rm ../results/strong_scaling.txt
 rm ../results/weak_scaling.txt
 
-# for N in 2000 4000 6000 8000 10000; do
-#  srun -n 1 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
-#  srun -n 2 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
-#  srun -n 4 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
-#  srun -n 8 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
-#  srun -n 16 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
-#  srun -n 32 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
-# done
+for N in 2000 4000 6000 8000 10000; do
+  srun -n 1 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
+  srun -n 2 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
+  srun -n 4 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
+  srun -n 8 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
+  srun -n 16 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
+  srun -n 32 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
+done
 
 srun -n 1 ./cgsolver lap2D_5pt_n100.mtx 1767 ../results/weak_scaling.txt 200
 srun -n 2 ./cgsolver lap2D_5pt_n100.mtx 2500 ../results/weak_scaling.txt 200
