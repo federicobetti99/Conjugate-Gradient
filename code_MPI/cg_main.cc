@@ -83,9 +83,7 @@ int main(int argc, char ** argv) {
     if (argc >= 5) {
         std::stringstream arg_0(argv[4]);
         arg_0 >> maxIter;
-    }
-    else {
-        maxIter = n;
+        solver.set_max_iter(maxIter);
     }
 
     solver.set_max_iter(maxIter);
