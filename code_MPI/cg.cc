@@ -157,7 +157,7 @@ void CGSolver::solve(int start_rows[],
 
     // for i = 1:length(b)
     int k = 0;
-    for (; k < m_n; ++k) {
+    for (; k < m_maxIter; ++k) {
 
         /// MPI: gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
@@ -237,7 +237,11 @@ void CGSolver::reduce_problem(int N_sub) {
 void CGSolver::set_problem_size() {
        m_m = m_A.m();
        m_n = m_A.n();
-} 	
+}
+
+void CGSolver::set_max_iter(int maxIter) {
+    m_maxIter = maxIter;
+}
 
 Matrix CGSolver::get_submatrix(Matrix A, int N_loc, int start_m) {
     Matrix submatrix;

@@ -69,9 +69,13 @@ public:
                	       int num_rows[],
                        std::vector<double> & x);
 
+    /// fix maximum number of iterations for weak scaling experiments
+    virtual void set_max_iter(int maxIter);
+
 private:
     /// finite element matrix
     Matrix m_A;
+    int m_maxIter{m_n};
 };
 
 class CGSolverSparse : public Solver {
