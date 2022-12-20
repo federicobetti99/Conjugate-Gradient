@@ -75,7 +75,7 @@ public:
 private:
     /// finite element matrix
     Matrix m_A;
-    int m_maxIter{m_n};
+    int m_maxIter;
 };
 
 class CGSolverSparse : public Solver {

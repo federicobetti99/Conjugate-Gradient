@@ -237,6 +237,7 @@ void CGSolver::reduce_problem(int N_sub) {
 void CGSolver::set_problem_size() {
        m_m = m_A.m();
        m_n = m_A.n();
+       m_maxIter = m_n;
 }
 
 void CGSolver::set_max_iter(int maxIter) {
