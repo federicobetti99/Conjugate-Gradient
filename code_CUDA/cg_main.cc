@@ -44,7 +44,7 @@ int main(int argc, char ** argv) {
 
     /// solve and print statistics
     auto t1 = clk::now();
-    solver.solve(x_d, block_size, KERNEL_TYPE, BLOCK_WIDTH);
+    solver.solve(x_d, block_size, BLOCK_WIDTH);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
