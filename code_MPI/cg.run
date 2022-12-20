@@ -18,9 +18,9 @@ rm ../results/weak_scaling.txt
 #  srun -n 32 ./cgsolver lap2D_5pt_n100.mtx $N ../results/strong_scaling.txt
 # done
 
-srun -n 1 ./cgsolver lap2D_5pt_n100.mtx 1767 ../results/weak_scaling.txt
-srun -n 2 ./cgsolver lap2D_5pt_n100.mtx 2500 ../results/weak_scaling.txt
-srun -n 4 ./cgsolver lap2D_5pt_n100.mtx 3535 ../results/weak_scaling.txt
-srun -n 8 ./cgsolver lap2D_5pt_n100.mtx 5000 ../results/weak_scaling.txt
-srun -n 16 ./cgsolver lap2D_5pt_n100.mtx 7071 ../results/weak_scaling.txt
-srun -n 32 ./cgsolver lap2D_5pt_n100.mtx 10000 ../results/weak_scaling.txt
+srun -n 1 ./cgsolver lap2D_5pt_n100.mtx 1767 ../results/weak_scaling.txt 200
+srun -n 2 ./cgsolver lap2D_5pt_n100.mtx 2500 ../results/weak_scaling.txt 200
+srun -n 4 ./cgsolver lap2D_5pt_n100.mtx 3535 ../results/weak_scaling.txt 200
+srun -n 8 ./cgsolver lap2D_5pt_n100.mtx 5000 ../results/weak_scaling.txt 200
+srun -n 16 ./cgsolver lap2D_5pt_n100.mtx 7071 ../results/weak_scaling.txt 200
+srun -n 32 ./cgsolver lap2D_5pt_n100.mtx 10000 ../results/weak_scaling.txt 200
