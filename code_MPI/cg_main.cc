@@ -9,7 +9,7 @@ using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
-#define WEAK
+#define WEAK = true;
 
 
 void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
@@ -70,8 +70,8 @@ int main(int argc, char ** argv) {
     int n = solver.n();
     int m = solver.m();
 
-#ifdef (WEAK) solver.set_max_iter(200);
-#endif
+    if (WEAK) solver.set_max_iter(200);
+    else solver.set_max_iter(n);
 
     /// MPI: domain decomposition along rows
     int *start_rows;
