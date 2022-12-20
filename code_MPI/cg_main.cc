@@ -86,8 +86,6 @@ int main(int argc, char ** argv) {
         solver.set_max_iter(maxIter);
     }
 
-    solver.set_max_iter(maxIter);
-
     /// MPI: domain decomposition along rows
     int *start_rows;
     start_rows = new int [psize];
