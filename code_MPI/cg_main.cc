@@ -71,6 +71,7 @@ int main(int argc, char ** argv) {
     int m = solver.m();
 
 #ifdef (WEAK) solver.set_max_iter(200);
+#endif
 
     /// MPI: domain decomposition along rows
     int *start_rows;
