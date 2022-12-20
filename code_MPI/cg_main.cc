@@ -63,16 +63,6 @@ int main(int argc, char ** argv) {
 
     std::string OUTPUT_FILE(argv[3]);
 
-    if (argc >= 5) {
-        std::stringstream arg_0(argv[4]);
-        int maxIter;
-        arg_0 >> maxIter;
-    }
-    else {
-        int maxIter;
-        maxIter = n;
-    }
-
     // get size of the matrix
     solver.set_problem_size();
     int n = solver.n();
