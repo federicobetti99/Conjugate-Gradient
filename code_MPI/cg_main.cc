@@ -78,13 +78,13 @@ int main(int argc, char ** argv) {
     int n = solver.n();
     int m = solver.m();
 
+    int maxIter;
+
     if (argc >= 5) {
         std::stringstream arg_0(argv[4]);
-        int maxIter;
         arg_0 >> maxIter;
     }
     else {
-        int maxIter;
         maxIter = n;
     }
 
