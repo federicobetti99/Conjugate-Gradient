@@ -9,26 +9,18 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void MatVec(const int N, const int BLOCK_WIDTH, Matrix A, double* p, double* Ap) {
+__global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT, Matrix A, double* p, double* Ap) {
     __shared__ int blockElt;
     __shared__ int blockxInd;
     __shared__ int blockyInd;
 
     if (threadIdx.x == 0) {
-        if ((blockIdx.y + 1) * BLOCK_WIDTH <= matrixHeight)
+        if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
             blockElt = BLOCK_WIDTH;
-        else blockElt = matrixHeight % BLOCK_WIDTH;
+        else blockElt = N % BLOCK_WIDTH;
         blockxInd = blockIdx.x * BLOCK_HEIGHT;
         blockyInd = blockIdx.y * BLOCK_WIDTH;
     }
-
-    __syncthreads();
-
-    // copy everything we can inside shared memory
-    __shared__ double b[BLOCK_WIDTH];
-
-    if (threadIdx.x < blockElt)
-        b[threadIdx.x] = p[blockyInd + threadIdx.x];
 
     __syncthreads();
 
@@ -37,11 +29,11 @@ __global__ void MatVec(const int N, const int BLOCK_WIDTH, Matrix A, double* p, 
     int threadxInd = blockxInd + threadIdx.x;
 
     // make sure we are inside the array horizontally
-    if (threadxInd < matrixWidth) {
+    if (threadxInd < N) {
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += A(threadxInd, blockyInd + i) * b[i];
+            cSum += A(threadxInd, blockyInd + i) * p[blockyInd + i];
 
         // atomic add these variables to the corresponding c index
         atomicAdd(Ap + threadxInd , cSum);
@@ -72,7 +64,7 @@ __global__ void copy(int N, double* a, double* b) {
     if (i < N) a[i] = b[i];
 }
 
-void CGSolver::solve(double* x, const int BLOCK_HEIGHT, const int BLOCK_WIDTH) {
+void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
     double *r;
     double *p;
     double *Ap;
@@ -103,7 +95,7 @@ void CGSolver::solve(double* x, const int BLOCK_HEIGHT, const int BLOCK_WIDTH) {
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
     // r = b - A * x;
-    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, x, Ap);
+    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
     cudaDeviceSynchronize();
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
     sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
@@ -121,7 +113,7 @@ void CGSolver::solve(double* x, const int BLOCK_HEIGHT, const int BLOCK_WIDTH) {
 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, p, Ap);
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
@@ -155,7 +147,7 @@ void CGSolver::solve(double* x, const int BLOCK_HEIGHT, const int BLOCK_WIDTH) {
 
     if (DEBUG) {
         fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, x, r);
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, r);
         cudaDeviceSynchronize();
         sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., m_b);
         double* num_;

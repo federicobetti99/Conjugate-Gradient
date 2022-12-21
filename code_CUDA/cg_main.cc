@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
     /// save results to file
     std::ofstream outfile;
     outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
-    outfile << BLOCK_WIDTH << "," << block_size.x << "," << block_size.y << "," << elapsed.count() << std::endl;
+    outfile << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
     outfile.close();
 
     return 0;
