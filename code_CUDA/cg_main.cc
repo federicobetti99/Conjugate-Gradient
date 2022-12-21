@@ -18,11 +18,10 @@ int main(int argc, char ** argv) {
     if (argc < 2) usage(argv[0]);
 
     /// get number of threads per block
-    int NUM_THREADS_PER_BLOCK = std::stoi(argv[2]);
-    dim3 block_size(NUM_THREADS_PER_BLOCK);
+    int BLOCK_WIDTH = std::stoi(argv[2]);
 
     /// get block width for matrix vector product grid
-    int BLOCK_WIDTH = std::stoi(argv[3]);
+    int BLOCK_HEIGHT = std::stoi(argv[3]);
 
     /// file where to save the results
     std::string OUTPUT_FILE(argv[4]);
@@ -44,7 +43,7 @@ int main(int argc, char ** argv) {
 
     /// solve and print statistics
     auto t1 = clk::now();
-    solver.solve(x_d, block_size, BLOCK_WIDTH);
+    solver.solve(x_d, BLOCK_WIDTH, BLOCK_HEIGHT);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 

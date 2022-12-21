@@ -9,35 +9,46 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void MatMulKernel(const int N, const int BLOCK_WIDTH, Matrix A, double* p, double* Ap) {
-    // get variables for loop
+__global__ void MatVec(const int N, const int BLOCK_WIDTH, Matrix A, double* p, double* Ap) {
     __shared__ int blockElt;
-    if (blockIdx.x * BLOCK_WIDTH + BLOCK_WIDTH <= N) blockElt = BLOCK_WIDTH;
-    else blockElt = N % BLOCK_WIDTH;
+    __shared__ int blockxInd;
+    __shared__ int blockyInd;
 
+    if (threadIdx.x == 0) {
+        if ((blockIdx.y + 1) * BLOCK_WIDTH <= matrixHeight)
+            blockElt = BLOCK_WIDTH;
+        else blockElt = matrixHeight % BLOCK_WIDTH;
+        blockxInd = blockIdx.x * BLOCK_HEIGHT;
+        blockyInd = blockIdx.y * BLOCK_WIDTH;
+    }
+
+    __syncthreads();
+
+    // copy everything we can inside shared memory
     __shared__ double b[BLOCK_WIDTH];
 
     if (threadIdx.x < blockElt)
-        b[threadIdx.x] = p[blockIdx.x * BLOCK_WIDTH + threadIdx.x];
+        b[threadIdx.x] = p[blockyInd + threadIdx.x];
+
+    __syncthreads();
 
     // summing variable
     double cSum = 0.;
-    int threadyInd = blockIdx.y * blockDim.x + threadIdx.x;
+    int threadxInd = blockxInd + threadIdx.x;
 
-    // make sure we are inside the matrix vertically
-    if (threadyInd < N) {
+    // make sure we are inside the array horizontally
+    if (threadxInd < matrixWidth) {
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += b[i] * A(blockIdx.x * BLOCK_WIDTH + i, threadyInd);
+            cSum += A(threadxInd, blockyInd + i) * b[i];
 
-        // atomic add these variables to the corresponding output index
-        atomicAdd(Ap + threadyInd, cSum);
+        // atomic add these variables to the corresponding c index
+        atomicAdd(Ap + threadxInd , cSum);
     }
-
 }
 
-__global__ void MatVec(int N, Matrix A, double* p, double* Ap) {
+__global__ void MatVec_naive(int N, Matrix A, double* p, double* Ap) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         for (unsigned int j = 0; j < N; ++j) {
@@ -61,7 +72,7 @@ __global__ void copy(int N, double* a, double* b) {
     if (i < N) a[i] = b[i];
 }
 
-void CGSolver::solve(double* x, dim3 block_size, int BLOCK_WIDTH) {
+void CGSolver::solve(double* x, const int BLOCK_HEIGHT, const int BLOCK_WIDTH) {
     double *r;
     double *p;
     double *Ap;
@@ -79,8 +90,9 @@ void CGSolver::solve(double* x, dim3 block_size, int BLOCK_WIDTH) {
     cudaMallocManaged(&rsold_, sizeof(double));
 
     // define grid size for linear combination of vectors
-    dim3 vec_grid_size((int) ceil(m_m / (double) block_size.x));
-    dim3 matvec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH), (int) ceil(m_m / (double) block_size.x));
+    dim3 block_size(BLOCK_HEIGHT);
+    dim3 vec_grid_size((int) ceil(m_n / (double) block_size.x));
+    dim3 matvec_grid_size((int) ceil(m_n / (double) BLOCK_HEIGHT), (int) ceil(m_m / (double) BLOCK_WIDTH));
     
     // initialize cublas handle
     cublasHandle_t h;
@@ -91,7 +103,7 @@ void CGSolver::solve(double* x, dim3 block_size, int BLOCK_WIDTH) {
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
     // r = b - A * x;
-    MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, x, Ap);
+    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, x, Ap);
     cudaDeviceSynchronize();
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
     sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
@@ -109,7 +121,7 @@ void CGSolver::solve(double* x, dim3 block_size, int BLOCK_WIDTH) {
 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
-        MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, p, Ap);
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
@@ -143,7 +155,7 @@ void CGSolver::solve(double* x, dim3 block_size, int BLOCK_WIDTH) {
 
     if (DEBUG) {
         fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);
-        MatMulKernel<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, x, r);
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, m_A, x, r);
         cudaDeviceSynchronize();
         sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., m_b);
         double* num_;
