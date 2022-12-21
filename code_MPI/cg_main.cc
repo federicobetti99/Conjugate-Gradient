@@ -49,19 +49,9 @@ int main(int argc, char ** argv) {
     return 1;
     }
 
-    // initialize solver and first rank is reading matrix from file
+    // initialize solver and generate Laplacian matrix of user-defined size
     CGSolver solver;
-    solver.read_matrix(argv[1]);
-
-    // possibility of reducing problem size
-    if (argc >= 3) {
-	    std::stringstream arg_0(argv[2]);
-    	int N_sub;
-    	arg_0 >> N_sub;
-	    solver.reduce_problem(N_sub);
-    }
-
-    std::string OUTPUT_FILE(argv[3]);
+    solver.generate_lap2d_matrix(argv[1]);
 
     // get size of the matrix
     solver.set_problem_size();
@@ -70,8 +60,8 @@ int main(int argc, char ** argv) {
 
     int maxIter;
 
-    if (argc >= 5) {
-        std::stringstream arg_0(argv[4]);
+    if (argc >= 4) {
+        std::stringstream arg_0(argv[3]);
         arg_0 >> maxIter;
         solver.set_max_iter(maxIter);
     }
@@ -102,6 +92,7 @@ int main(int argc, char ** argv) {
 
     if (prank == 0) {
         // save results to file
+        std::string OUTPUT_FILE(argv[2]);
         std::ofstream outfile;
         outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
         outfile << n << "," << psize << "," << elapsed.count() << std::endl;

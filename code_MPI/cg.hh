@@ -8,22 +8,31 @@
 #ifndef __CG_HH__
 #define __CG_HH__
 
-
-class Solver {
+class CGSolver {
 public:
+    /// initialize solver
+    CGSolver() = default;
+
     /// read matrix from .mtx file
-    virtual void read_matrix(const std::string & filename) = 0;
+    virtual void read_matrix(const std::string & filename);
 
     /// initialize source term
     void init_source_term(double h);
 
-    /// serial solver for CG
-    virtual void serial_solve(std::vector<double> & x) = 0;
+    /// generate Laplacian 2d matrix for weak scaling and strong scaling experiment
+    virtual void generate_lap2d_matrix(int size);
+   
+    /// get submatrix for parallel computation
+    Matrix get_submatrix(Matrix A, int N_loc, int start_m);    
 
-    /// solve linear system with iterative CG
-    virtual void solve(int start_rows[],
-                       int num_rows[],
-                       std::vector<double> & x) = 0;
+    /// serial solver   
+    virtual void serial_solve(std::vector<double> & x);    
+
+    /// implements conjugate gradient with MPI interface
+    virtual void solve(int start_rows[], int num_rows[], std::vector<double> & x);
+
+    /// fix maximum number of iterations for weak scaling experiments
+    virtual void set_max_iter(int maxIter);
 
     /// initialize size of the matrix (in this case m = n)
     inline int m() const { return m_m; }
@@ -32,77 +41,22 @@ public:
     /// prescribe residual tolerance for ending of the algorithm
     void tolerance(double tolerance) { m_tolerance = tolerance; }
 
-protected:
+private:
     /// initialize m and n
     int m_m{0};
     int m_n{0};
+
+    /// finite element matrix
+    Matrix m_A;
+
+    /// maximum number of iterations
+    int m_maxIter;
 
     /// right hand side
     std::vector<double> m_b;
 
     /// residual tolerance
     double m_tolerance{1e-10};
-};
-
-class CGSolver : public Solver {
-public:
-    /// initialize solver
-    CGSolver() = default;
-
-    /// read matrix from .mtx file
-    virtual void read_matrix(const std::string & filename);
-
-    /// reduce matrix size for weak scaling experiments
-    void reduce_problem(int N_sub);
-
-    /// set problem size if the latter was readjusted e.g. for weak scaling experiments
-    void set_problem_size();
-   
-    /// get submatrix for parallel computation
-    Matrix get_submatrix(Matrix A, int N_loc, int start_m);    
-
-    /// serial solver   
-    virtual void serial_solve(std::vector<double> & x);    
-
-    /// solve linear system with iterative CG
-    virtual void solve(int start_rows[],
-               	       int num_rows[],
-                       std::vector<double> & x);
-
-    /// fix maximum number of iterations for weak scaling experiments
-    virtual void set_max_iter(int maxIter);
-
-private:
-    /// finite element matrix
-    Matrix m_A;
-    int m_maxIter;
-};
-
-class CGSolverSparse : public Solver {
-public:
-    /// initialize solver
-    CGSolverSparse() = default;
-
-    /// read matrix from .mtx file
-    virtual void read_matrix(const std::string & filename);
-
-    /// get submatrix for parallel computation
-    MatrixCOO get_submatrix(MatrixCOO A, int N_loc, int start_m);
-
-    /// get subvector for parallel computation
-    std::vector<double> get_subvector(std::vector<double>& arr, int N_loc, int start_m);
-
-    /// solve linear system with iterative CG
-    virtual void serial_solve(std::vector<double> & x);
-
-    /// solve linear system with iterative CG
-    virtual void solve(int start_rows[],
-                       int num_rows[],
-                       std::vector<double> & x);
-
-private:
-    /// finite element matrix
-    MatrixCOO m_A;
 };
 
 #endif /* __CG_HH__ */
