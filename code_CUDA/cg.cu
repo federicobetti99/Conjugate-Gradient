@@ -15,11 +15,11 @@ __global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGH
     __shared__ int blockyInd;
 
     if (threadIdx.x == 0) {
-        if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
-            blockElt = BLOCK_WIDTH;
-        else blockElt = N % BLOCK_WIDTH;
-        blockxInd = blockIdx.x * BLOCK_HEIGHT;
-        blockyInd = blockIdx.y * BLOCK_WIDTH;
+        if ((blockIdx.y + 1) * BLOCK_HEIGHT <= N)
+            blockElt = BLOCK_HEIGHT;
+        else blockElt = N % BLOCK_HEIGHT;
+        blockxInd = blockIdx.x * BLOCK_WIDTH;
+        blockyInd = blockIdx.y * BLOCK_HEIGHT;
     }
 
     __syncthreads();
@@ -33,7 +33,7 @@ __global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGH
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += A(threadxInd, blockyInd + i) * p[blockyInd + i];
+            cSum += A(blockyInd + i, threadxInd) * p[blockyInd + i];
 
         // atomic add these variables to the corresponding c index
         atomicAdd(Ap + threadxInd , cSum);
@@ -82,9 +82,9 @@ void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
     cudaMallocManaged(&rsold_, sizeof(double));
 
     // define grid size for linear combination of vectors
-    dim3 block_size(BLOCK_HEIGHT);
+    dim3 block_size(BLOCK_WIDTH);
     dim3 vec_grid_size((int) ceil(m_n / (double) block_size.x));
-    dim3 matvec_grid_size((int) ceil(m_n / (double) BLOCK_HEIGHT), (int) ceil(m_m / (double) BLOCK_WIDTH));
+    dim3 matvec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH), (int) ceil(m_m / (double) BLOCK_HEIGHT));
     
     // initialize cublas handle
     cublasHandle_t h;
