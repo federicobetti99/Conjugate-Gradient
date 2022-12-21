@@ -12,7 +12,7 @@ rm ../results/strong_scaling.txt
 rm ../results/weak_scaling.txt
 
 # STRONG SCALING EXPERIMENTS
-for N in 1024 2048 4096 8192 16384; do
+for N in 1024 2048 4096 8192; do
   srun -n 1 ./cgsolver  $N ../results/strong_scaling.txt
   srun -n 2 ./cgsolver  $N ../results/strong_scaling.txt
   srun -n 4 ./cgsolver  $N ../results/strong_scaling.txt
@@ -23,10 +23,10 @@ for N in 1024 2048 4096 8192 16384; do
 done
 
 # WEAK SCALING EXPERIMENTS
-srun -n 1 ./cgsolver 4096 ../results/weak_scaling.txt 200
-srun -n 2 ./cgsolver 5786 ../results/weak_scaling.txt 200
-srun -n 4 ./cgsolver 8184 ../results/weak_scaling.txt 200
-srun -n 8 ./cgsolver 11574 ../results/weak_scaling.txt 200
-srun -n 16 ./cgsolver 16368 ../results/weak_scaling.txt 200
-srun -n 32 ./cgsolver 23148 ../results/weak_scaling.txt 200
-srun -n 64 ./cgsolver 32736 ../results/weak_scaling.txt 200
+srun -n 1 ./cgsolver 2048 ../results/weak_scaling.txt 200
+srun -n 2 ./cgsolver 2896 ../results/weak_scaling.txt 200
+srun -n 4 ./cgsolver 4096 ../results/weak_scaling.txt 200
+srun -n 8 ./cgsolver 5792 ../results/weak_scaling.txt 200
+srun -n 16 ./cgsolver 8192 ../results/weak_scaling.txt 200
+srun -n 32 ./cgsolver 11585 ../results/weak_scaling.txt 200
+srun -n 64 ./cgsolver 16384 ../results/weak_scaling.txt 200

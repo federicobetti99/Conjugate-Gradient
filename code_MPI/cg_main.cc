@@ -51,15 +51,13 @@ int main(int argc, char ** argv) {
 
     // initialize solver and generate Laplacian matrix of user-defined size
     CGSolver solver;
-    solver.generate_lap2d_matrix(argv[1]);
+    solver.generate_lap2d_matrix(std::stoi(argv[1]));
 
     // get size of the matrix
-    solver.set_problem_size();
     int n = solver.n();
     int m = solver.m();
 
     int maxIter;
-
     if (argc >= 4) {
         std::stringstream arg_0(argv[3]);
         arg_0 >> maxIter;
