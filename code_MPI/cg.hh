@@ -23,10 +23,7 @@ public:
     virtual void generate_lap2d_matrix(int size);
    
     /// get submatrix for parallel computation
-    Matrix get_submatrix(Matrix A, int N_loc, int start_m);    
-
-    /// serial solver   
-    virtual void serial_solve(std::vector<double> & x);    
+    Matrix get_submatrix(Matrix A, int N_loc, int start_m);
 
     /// implements conjugate gradient with MPI interface
     virtual void solve(int start_rows[], int num_rows[], std::vector<double> & x);

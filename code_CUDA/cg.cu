@@ -9,7 +9,73 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT, Matrix A, double* p, double* Ap) {
+__global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+                                Matrix A, double* p, double* Ap)
+{
+
+    /**
+    * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
+    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done
+    *
+    * @param N Size of the matrix.
+    * @param BLOCK_WIDTH width of the block
+    * @param BLOCK_HEIGHT height of the block
+    * @param A matrix.
+    * @param p vector.
+    * @param Ap vector for the result of A*p
+    * @return void.
+    */
+
+    __shared__ int blockElt;
+    __shared__ int blockxInd;
+    __shared__ int blockyInd;
+
+    if (threadIdx.x == 0) {
+        if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
+            blockElt = BLOCK_WIDTH;
+        else blockElt = N % BLOCK_WIDTH;
+        blockxInd = blockIdx.x * BLOCK_WIDTH;
+        blockyInd = blockIdx.y * BLOCK_HEIGHT;
+    }
+
+    __syncthreads();
+
+    // summing variable
+    double cSum = 0.;
+    int threadyInd = blockyInd + threadIdx.x;
+
+    // make sure we are inside the array horizontally
+    if (threadyInd < N) {
+
+        // go through the threads vertically and sum them into a variable
+        for (int i = 0; i < blockElt; i++)
+            cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
+
+        // atomic add these variables to the corresponding Ap index
+        atomicAdd(Ap + threadyInd , cSum);
+    }
+
+}
+
+__global__ void EfficientMatVecTranspose(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+                                Matrix A, double* p, double* Ap)
+{
+
+    /**
+    * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
+    * column of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
+    * The result of the kernel stored in Ap is equivalent to the one of EfficientMatVec, but exploits symmetry of the
+    * matrix to favour coalesced memory access. This kernel provided overall the best results.
+    *
+    * @param N Size of the matrix.
+    * @param BLOCK_WIDTH width of the block
+    * @param BLOCK_HEIGHT height of the block
+    * @param A matrix.
+    * @param p vector.
+    * @param Ap vector for the result of A*p
+    * @return void.
+    */
+
     __shared__ int blockElt;
     __shared__ int blockxInd;
     __shared__ int blockyInd;
@@ -35,36 +101,137 @@ __global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGH
         for (int i = 0; i < blockElt; i++)
             cSum += A(blockyInd + i, threadxInd) * p[blockyInd + i];
 
-        // atomic add these variables to the corresponding c index
+        // atomic add these variables to the corresponding Ap index
         atomicAdd(Ap + threadxInd , cSum);
     }
 }
 
-__global__ void MatVec_naive(int N, Matrix A, double* p, double* Ap) {
+__global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+                            Matrix A, double* p, double* Ap)
+{
+
+    /**
+    * Naive kernel for matrix vector product, every thread takes care of the dot product between a row of A and p
+    *
+    * @param N size of the matrix
+   * @param BLOCK_WIDTH width of the block, not used
+    * @param BLOCK_HEIGHT height of the block, not used
+    * @param A matrix
+    * @param p vector
+    * @param Ap vector for the result of A*p
+    * @return void.
+    */
+
+    (void) BLOCK_WIDTH;
+    (void) BLOCK_HEIGHT;
+
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         for (unsigned int j = 0; j < N; ++j) {
             Ap[i] = Ap[i] + A(i, j) * p[j];
         }
     }
+
 }
 
-__global__ void sumVec(int N, double alpha, double* a, double beta, double* b) {
+__global__ void NaiveMatVecTranspose(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+                                     Matrix A, double* p, double* Ap)
+{
+
+    /**
+    * Naive kernel for matrix vector product, every thread takes care of the dot product between a column of A and p.
+    * This is equivalent to what the kernel NaiveMatVec does, but exploits symmetry of the matrix A and hence makes sure
+    * that neighbouring threads are requesting access to neighbouring data in memory (coalesced memory access). Still,
+    * the amount of work per thread is O(N) and this is quite inefficient, so low GPU occupancy is likely to be observed
+    *
+    * @param N Size of the matrix
+    * @param BLOCK_WIDTH width of the block, not used
+    * @param BLOCK_HEIGHT height of the block, not used
+    * @param A matrix
+    * @param p vector
+    * @param Ap vector for the result of A*p
+    * @return void
+    */
+
+    (void) BLOCK_WIDTH;
+    (void) BLOCK_HEIGHT;
+
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < N) {
+        for (unsigned int j = 0; j < N; ++j) {
+            Ap[i] = Ap[i] + A(j, i) * p[j];
+        }
+    }
+
+}
+
+
+__global__ void sumVec(int N, double alpha, double* a, double beta, double* b)
+{
+
+    /**
+    * Simple kernel for summing of two vectors, here the optimization of the topology behind leaves space to much
+    * less details, every thread takes care of summing one element of the two vectors
+    *
+    * @param N Size of the vectors a and b
+    * @param alpha coefficient to multiply a
+    * @param a vector to be summed premultiplied by alpha
+    * @param beta coefficient to multiply b
+    * @param b vector to be summed premultiplied by beta
+    * @return void
+    */
+
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) a[i] = alpha * a[i] + beta * b[i];
+
 }
 
-__global__ void fill(int N, double* a, double val) {
+__global__ void fill(int N, double* a, double val)
+{
+
+    /**
+    * Simple kernel to set all the elements of the vector a to value val
+    *
+    * @param N Size of the vector a
+    * @param a vector to be filled
+    * @param val value to fill in all the elements of a
+    * @return void
+    */
+
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) a[i] = val;
+
 }
 
-__global__ void copy(int N, double* a, double* b) {
+__global__ void copy(int N, double* a, double* b)
+{
+
+    /**
+    * Simple kernel to copy the content of vector b into the content of vector a
+    *
+    * @param N Size of the vector a
+    * @param a vector to be filled
+    * @param b vector to be copied into a
+    * @return void
+    */
+
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) a[i] = b[i];
+
 }
 
-void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
+void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, const int BLOCK_HEIGHT)
+{
+
+    /**
+    * Main function to solve the linear system Ax=b with conjugate gradient
+    *
+    * @param x initial guess, zero vector usually
+    * @param BLOCK_WIDTH width of the block for CUDA kernels
+    * @param BLOCK_HEIGHT height of the block for CUDA kernels
+    * @return void
+    */
+
     double *r;
     double *p;
     double *Ap;
@@ -75,6 +242,12 @@ void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
     cudaMallocManaged(&Ap, m_n * sizeof(double));
     cudaMallocManaged(&tmp, m_n * sizeof(double));
 
+    std::map<std::string, FnPtr> kernelMap;
+    kernelMap["NAIVE"] = NaiveMatVec;
+    kernelMap["NAIVE_T"] = NaiveMatVecTranspose;
+    kernelMap["EFFICIENT"] = EfficientMatVec;
+    kernelMap["EFFICIENT_T"] = EfficientMatVecTranspose;
+
     double conj, rsnew, rsold;
     double *conj_, *rsnew_, *rsold_;
     cudaMallocManaged(&conj_, sizeof(double));
@@ -84,7 +257,13 @@ void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
     // define grid size for linear combination of vectors
     dim3 block_size(BLOCK_WIDTH);
     dim3 vec_grid_size((int) ceil(m_n / (double) block_size.x));
-    dim3 matvec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH), (int) ceil(m_m / (double) BLOCK_HEIGHT));
+    dim3 matvec_grid_size;
+    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") || !std::strcmp(KERNEL_TYPE.c_str(), "NAIVE_T")) {
+        matvec_grid_size = vec_grid_size;
+    }
+    else if (!std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT") || !std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
+        matvec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH), (int) ceil(m_m / (double) BLOCK_HEIGHT));
+    }
     
     // initialize cublas handle
     cublasHandle_t h;
@@ -95,8 +274,9 @@ void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
     // r = b - A * x;
-    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    kernelMap[KERNEL_TYPE]<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
     cudaDeviceSynchronize();
+
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
     sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
 
@@ -113,7 +293,7 @@ void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        kernelMap[KERNEL_TYPE]<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
@@ -145,53 +325,46 @@ void CGSolver::solve(double* x, const int BLOCK_WIDTH, const int BLOCK_HEIGHT) {
         if (DEBUG) std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
     }
 
-    if (DEBUG) {
-        fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, r);
-        cudaDeviceSynchronize();
-        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., m_b);
-        double* num_;
-        double* denom_;
-        cudaMallocManaged(&num_, sizeof(double));
-        cudaMallocManaged(&denom_, sizeof(double));
-        double num = 0.;
-        double denom = 0.;
-        cublasDdot(h, m_n, r, 1, r, 1, num_);
-        cublasDdot(h, m_n, m_b, 1, m_b, 1, denom_);
-        cudaMemcpy(&num, num_, sizeof(double), cudaMemcpyDeviceToHost);
-        cudaMemcpy(&denom, denom_, sizeof(double), cudaMemcpyDeviceToHost);
-        auto res = num / denom;
-        double* nx_;
-        cudaMallocManaged(&nx_, sizeof(double));
-        double nx = 0.;
-        cublasDdot(h, m_n, x, 1, x, 1, nx_);
-        cudaMemcpy(&nx, nx_, sizeof(double), cudaMemcpyDeviceToHost);
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << std::sqrt(nx)
-                  << ", ||Ax - b||/||b|| = " << std::sqrt(res) << std::endl;
-    }
-   
     cudaFree(&r);
     cudaFree(&tmp);
     cudaFree(&p);
     cudaFree(&Ap);
 
     cublasDestroy(h);
+
 }
 
-void CGSolver::read_matrix(const std::string & filename) {
-  m_A.read(filename);
-  m_m = m_A.m();
-  m_n = m_A.n();
+void CGSolver::read_matrix(const std::string & filename)
+{
+
+    /**
+    * Read matrix from file and set problem size
+    *
+    * @param filename filename
+    * @return void
+    */
+
+    m_A.read(filename);
+    m_m = m_A.m();
+    m_n = m_A.n();
+
 }
 
-/*
-Initialization of the source term b
-*/
-void CGSolver::init_source_term(double h) {
-  cudaMallocManaged(&m_b, m_n * sizeof(double));
-  for (int i = 0; i < m_n; i++) {
+
+void CGSolver::init_source_term(double h)
+{
+
+    /**
+    * Initialization of source term
+    *
+    * @param h step size
+    * @return void
+    */
+
+    cudaMallocManaged(&m_b, m_n * sizeof(double));
+    for (int i = 0; i < m_n; i++) {
     m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
              std::sin(10. * M_PI * i * h);
-  }
+    }
+
 }

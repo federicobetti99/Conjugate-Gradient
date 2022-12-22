@@ -17,11 +17,23 @@ int main(int argc, char ** argv) {
 
     if (argc < 2) usage(argv[0]);
 
+    /// get type of kernel for matrix vector product
+    std::string KERNEL_TYPE(argv[2]);
+    if (std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") || std::strcmp(KERNEL_TYPE.c_str(), "NAIVE_T") ||
+        std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT") || std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
+        throw std::invalid_argument("Received non available kernel for matrix vector product.\n"
+                                    "Please, select one of the followings:"
+                                    "1. NAIVE (One thread per row)"
+                                    "2. NAIVE_T (One thread per row with coalescing)"
+                                    "3. EFFICIENT (Multiple threads per row)"
+                                    "4. EFFICIENT_T (Multiple threads per row with coalescing)");
+    }
+
     /// get number of threads per block
-    int BLOCK_WIDTH = std::stoi(argv[2]);
+    int BLOCK_WIDTH = std::stoi(argv[3]);
 
     /// get block width for matrix vector product grid
-    int BLOCK_HEIGHT = std::stoi(argv[3]);
+    int BLOCK_HEIGHT = std::stoi(argv[4]);
 
     /// file where to save the results
     std::string OUTPUT_FILE(argv[4]);
@@ -43,7 +55,7 @@ int main(int argc, char ** argv) {
 
     /// solve and print statistics
     auto t1 = clk::now();
-    solver.solve(x_d, BLOCK_WIDTH, BLOCK_HEIGHT);
+    solver.solve(x_d, KERNEL_TYPE, BLOCK_WIDTH, BLOCK_HEIGHT);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 

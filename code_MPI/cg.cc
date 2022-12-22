@@ -35,87 +35,16 @@ end
 
 */
 
-/// initialization of the source term b
-void CGSolver::init_source_term(double h) {
-    m_b.resize(m_n);
-    for (int i = 0; i < m_n; i++) {
-        m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
-                 std::sin(10. * M_PI * i * h);
-    }
-}
-
-void CGSolver::serial_solve(std::vector<double> & x) {
-    std::vector<double> r(m_n);
-    std::vector<double> p(m_n);
-    std::vector<double> Ap(m_n);
-    std::vector<double> tmp(m_n);
-
-    // r = b - A * x;
-    std::fill_n(Ap.begin(), Ap.size(), 0.);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                x.data(), 1, 0., Ap.data(), 1);
-
-    r = m_b;
-    cblas_daxpy(m_n, -1., Ap.data(), 1, r.data(), 1);
-
-    // p = r;
-    p = r;
-
-    // rsold = r' * r;
-    auto rsold = cblas_ddot(m_n, r.data(), 1, p.data(), 1);
-
-    // for i = 1:length(b)
-    int k = 0;
-    for (; k < m_n; ++k) {
-        // Ap = A * p;
-        std::fill_n(Ap.begin(), Ap.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                    p.data(), 1, 0., Ap.data(), 1);
-
-        // alpha = rsold / (p' * Ap);
-        auto alpha = rsold / std::max(cblas_ddot(m_n, p.data(), 1, Ap.data(), 1),
-                                      rsold * NEARZERO);
-
-        // x = x + alpha * p;
-        cblas_daxpy(m_n, alpha, p.data(), 1, x.data(), 1);
-
-        // r = r - alpha * Ap;
-        cblas_daxpy(m_n, -alpha, Ap.data(), 1, r.data(), 1);
-
-        // rsnew = r' * r;
-        auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
-
-        // if sqrt(rsnew) < 1e-10
-        //   break;
-        if (std::sqrt(rsnew) < m_tolerance)
-            break; // Convergence test
-
-        auto beta = rsnew / rsold;
-        // p = r + (rsnew / rsold) * p;
-        tmp = r;
-        cblas_daxpy(m_n, beta, p.data(), 1, tmp.data(), 1);
-        p = tmp;
-
-        // rsold = rsnew;
-        rsold = rsnew;
-    }
-
-    if (DEBUG) {
-        std::fill_n(r.begin(), r.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                    x.data(), 1, 0., r.data(), 1);
-        cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
-        auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
-                   std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
-        auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << nx
-                  << ", ||Ax - b||/||b|| = " << res << std::endl;
-    }
-}
-
-
-void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x) {
+void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
+{
+    /**
+    * Solve the linear system Ax = b with conjugate gradient and MPI interface
+    *
+    * @param start_rows first row of the submatrix of each rank
+    * @param num_rows   number of rows of the submatrix of each rank
+    * @param x initial guess
+    * @return void
+    */
 
     int prank;
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
@@ -216,10 +145,19 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x) 
 
 }
 
-void CGSolver::generate_lap2d_matrix(int size) {
+void CGSolver::generate_lap2d_matrix(int size)
+{
+   /**
+   * Generates a Laplacian 2d matrix of user-defined size, sets it to be the member m_A
+   *
+   * @param size size of the desired matrix
+   * @return void
+   */
+
     m_A.resize(size, size);
     m_m = size;
     m_n = size;
+    m_maxIter = size;
 
     int inc = (int) floor(sqrt(size));
 
@@ -233,21 +171,49 @@ void CGSolver::generate_lap2d_matrix(int size) {
         if (i < size-1) m_A(i, i+1) = -1;
         if (i < size-1-inc) m_A(i, i+1+inc) = -1;
     }
-    m_m = size;
-    m_n = size;
-    m_maxIter = m_n;
+
 }
 
 
-void CGSolver::read_matrix(const std::string & filename) {
-  m_A.read(filename);
+void CGSolver::read_matrix(const std::string & filename)
+{
+    /**
+   * Read a matrix from file
+   *
+   * @param filename filename
+   * @return void
+   */
+
+    m_A.read(filename);
+
 }
 
-void CGSolver::set_max_iter(int maxIter) {
+void CGSolver::set_max_iter(int maxIter)
+{
+
+    /**
+   * Set maximum number of iterations for conjugate gradient, used for weak scaling experiments
+   *
+   * @param maxIter maximum number of iterations
+   * @return void
+   */
+
     m_maxIter = maxIter;
+
 }
 
-Matrix CGSolver::get_submatrix(Matrix A, int N_loc, int start_m) {
+Matrix CGSolver::get_submatrix(Matrix A, int N_loc, int start_m)
+{
+
+    /**
+    * Get only a subset of the rows of m_A for splitting the computation among threads
+    *
+    * @param A full matrix of size m x n
+    * @param N_loc number of local rows
+    * @param start_m first row to be considered
+    * @return a submatrix of size N_loc x n
+    */
+
     Matrix submatrix;
     submatrix.resize(N_loc, A.n());
     for (int i = 0; i < N_loc; i++) {
@@ -256,4 +222,23 @@ Matrix CGSolver::get_submatrix(Matrix A, int N_loc, int start_m) {
         }
     }
     return submatrix;
+
+}
+
+void CGSolver::init_source_term(double h)
+{
+
+    /**
+    * Initialization of source term
+    *
+    * @param h step size
+    * @return void
+    */
+
+    m_b.resize(m_n);
+    for (int i = 0; i < m_n; i++) {
+        m_b[i] = -2. * i * M_PI * M_PI * std::sin(10. * M_PI * i * h) *
+                 std::sin(10. * M_PI * i * h);
+    }
+
 }
