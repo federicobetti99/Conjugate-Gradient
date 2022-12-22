@@ -4,6 +4,8 @@
 #include <math.h>
 #include <iostream>
 #include <exception>
+#include <map>
+#include <cstring>
 /* -------------------------------------------------------------------------- */
 
 const double NEARZERO = 1.0e-14;
@@ -262,7 +264,8 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
         matvec_grid_size = vec_grid_size;
     }
     else if (!std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT") || !std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
-        matvec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH), (int) ceil(m_m / (double) BLOCK_HEIGHT));
+        matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
+        matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
     }
     
     // initialize cublas handle
