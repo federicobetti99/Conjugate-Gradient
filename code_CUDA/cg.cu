@@ -244,12 +244,6 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     cudaMallocManaged(&Ap, m_n * sizeof(double));
     cudaMallocManaged(&tmp, m_n * sizeof(double));
 
-    std::map<std::string, FnPtr> kernelMap;
-    kernelMap["NAIVE"] = NaiveMatVec;
-    kernelMap["NAIVE_T"] = NaiveMatVecTranspose;
-    kernelMap["EFFICIENT"] = EfficientMatVec;
-    kernelMap["EFFICIENT_T"] = EfficientMatVecTranspose;
-
     double conj, rsnew, rsold;
     double *conj_, *rsnew_, *rsold_;
     cudaMallocManaged(&conj_, sizeof(double));
@@ -277,7 +271,18 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
     // r = b - A * x;
-    kernelMap[KERNEL_TYPE]<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+        NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    }
+    else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+        NaiveMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    }
+    else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+        EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    }
+    else if (!std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
+        EfficientMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    }
     cudaDeviceSynchronize();
 
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
@@ -296,7 +301,18 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
-        kernelMap[KERNEL_TYPE]<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+            NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        }
+        else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+            NaiveMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        }
+        else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+            EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        }
+        else if (!std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
+            EfficientMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        }
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
