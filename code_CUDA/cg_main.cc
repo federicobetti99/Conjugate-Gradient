@@ -19,14 +19,14 @@ int main(int argc, char ** argv) {
 
     /// get type of kernel for matrix vector product
     std::string KERNEL_TYPE(argv[2]);
-    if (std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") || std::strcmp(KERNEL_TYPE.c_str(), "NAIVE_T") ||
-        std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT") || std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
+    if (std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") && std::strcmp(KERNEL_TYPE.c_str(), "NAIVE_T") &&
+        std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT") && std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
         throw std::invalid_argument("Received non available kernel for matrix vector product.\n"
-                                    "Please, select one of the followings:"
-                                    "1. NAIVE (One thread per row)"
-                                    "2. NAIVE_T (One thread per row with coalescing)"
-                                    "3. EFFICIENT (Multiple threads per row)"
-                                    "4. EFFICIENT_T (Multiple threads per row with coalescing)");
+                                    "Please, select one of the followings:\n"
+                                    "1. NAIVE (One thread per row)\n"
+                                    "2. NAIVE_T (One thread per row with coalescing)\n"
+                                    "3. EFFICIENT (Multiple threads per row)\n"
+                                    "4. EFFICIENT_T (Multiple threads per row with coalescing)\n");
     }
 
     /// get number of threads per block
@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
     int BLOCK_HEIGHT = std::stoi(argv[4]);
 
     /// file where to save the results
-    std::string OUTPUT_FILE(argv[4]);
+    std::string OUTPUT_FILE(argv[5]);
 
     /// initialize solver and read matrix from file
     CGSolver solver;
