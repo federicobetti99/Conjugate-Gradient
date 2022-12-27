@@ -226,8 +226,6 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
             matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
         }
     }
-
-    }
     
     // initialize cublas handle
     cublasHandle_t h;
