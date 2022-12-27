@@ -12,20 +12,24 @@ const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
 __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
-                                Matrix A, double* p, double* Ap)
+                                const bool TRANSPOSE, Matrix A, double* p, double* Ap)
 {
 
     /**
     * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
-    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done
+    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
+    * The efficiency of the kernel execution can be improved by setting TRANSPOSE = true, which exploits symmetry of
+    * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
+    * (coalesced memory access). This kernel with TRANPOSE = true gave overall the best results.
     *
-    * @param N Size of the matrix.
+    * @param N Size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block
     * @param BLOCK_HEIGHT height of the block
-    * @param A matrix.
-    * @param p vector.
+    * @param TRANSPOSE true to compute A^T p instead for coalescing effects
+    * @param A matrix
+    * @param p vector
     * @param Ap vector for the result of A*p
-    * @return void.
+    * @return void
     */
 
     __shared__ int blockElt;
@@ -44,111 +48,37 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
 
     // summing variable
     double cSum = 0.;
-    int threadyInd = blockyInd + threadIdx.x;
+    int threadInd = blockyInd + threadIdx.x;
 
-    // make sure we are inside the array horizontally
-    if (threadyInd < N) {
-
-        // go through the threads vertically and sum them into a variable
-        for (int i = 0; i < blockElt; i++)
-            cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
-
-        // atomic add these variables to the corresponding Ap index
-        atomicAdd(Ap + threadyInd , cSum);
-    }
-
-}
-
-__global__ void EfficientMatVecTranspose(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
-                                Matrix A, double* p, double* Ap)
-{
-
-    /**
-    * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
-    * column of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
-    * The result of the kernel stored in Ap is equivalent to the one of EfficientMatVec, but exploits symmetry of the
-    * matrix to favour coalesced memory access. This kernel provided overall the best results.
-    *
-    * @param N Size of the matrix.
-    * @param BLOCK_WIDTH width of the block
-    * @param BLOCK_HEIGHT height of the block
-    * @param A matrix.
-    * @param p vector.
-    * @param Ap vector for the result of A*p
-    * @return void.
-    */
-
-    __shared__ int blockElt;
-    __shared__ int blockxInd;
-    __shared__ int blockyInd;
-
-    if (threadIdx.x == 0) {
-        if ((blockIdx.y + 1) * BLOCK_HEIGHT <= N)
-            blockElt = BLOCK_HEIGHT;
-        else blockElt = N % BLOCK_HEIGHT;
-        blockxInd = blockIdx.x * BLOCK_WIDTH;
-        blockyInd = blockIdx.y * BLOCK_HEIGHT;
-    }
-
-    __syncthreads();
-
-    // summing variable
-    double cSum = 0.;
-    int threadxInd = blockxInd + threadIdx.x;
-
-    // make sure we are inside the array horizontally
-    if (threadxInd < N) {
+    // make sure we are inside the array horizontally (vertically if TRANSPOSE = true)
+    if (threadInd < N) {
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += A(blockyInd + i, threadxInd) * p[blockyInd + i];
+            if (TRANSPOSE) cSum += A(blockyInd + i, threadInd) * p[blockyInd + i];;
+            else cSum += A(threadInd, blockxInd + i) * p[blockxInd + i];
 
         // atomic add these variables to the corresponding Ap index
-        atomicAdd(Ap + threadxInd , cSum);
+        atomicAdd(Ap + threadInd, cSum);
     }
+
 }
 
 __global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
-                            Matrix A, double* p, double* Ap)
+                            const bool TRANSPOSE, Matrix A, double* p, double* Ap)
 {
 
     /**
     * Naive kernel for matrix vector product, every thread takes care of the dot product between a row of A and p
+    * The efficiency of the kernel execution can be improved by setting TRANSPOSE = true, which exploits symmetry of
+    * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
+    * (coalesced memory access). Still, the amount of work per thread is O(N) and this is quite inefficient,
+    * so low GPU occupancy is likely to be observed when the number of threads per block increases
     *
-    * @param N size of the matrix
-   * @param BLOCK_WIDTH width of the block, not used
-    * @param BLOCK_HEIGHT height of the block, not used
-    * @param A matrix
-    * @param p vector
-    * @param Ap vector for the result of A*p
-    * @return void.
-    */
-
-    (void) BLOCK_WIDTH;
-    (void) BLOCK_HEIGHT;
-
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < N) {
-        for (unsigned int j = 0; j < N; ++j) {
-            Ap[i] = Ap[i] + A(i, j) * p[j];
-        }
-    }
-
-}
-
-__global__ void NaiveMatVecTranspose(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
-                                     Matrix A, double* p, double* Ap)
-{
-
-    /**
-    * Naive kernel for matrix vector product, every thread takes care of the dot product between a column of A and p.
-    * This is equivalent to what the kernel NaiveMatVec does, but exploits symmetry of the matrix A and hence makes sure
-    * that neighbouring threads are requesting access to neighbouring data in memory (coalesced memory access). Still,
-    * the amount of work per thread is O(N) and this is quite inefficient, so low GPU occupancy is likely to be observed
-    *
-    * @param N Size of the matrix
+    * @param N size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block, not used
     * @param BLOCK_HEIGHT height of the block, not used
+    * @param TRANSPOSE true to compute A^T p for coalescing effects
     * @param A matrix
     * @param p vector
     * @param Ap vector for the result of A*p
@@ -161,12 +91,12 @@ __global__ void NaiveMatVecTranspose(int N, const int BLOCK_WIDTH, const int BLO
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         for (unsigned int j = 0; j < N; ++j) {
-            Ap[i] = Ap[i] + A(j, i) * p[j];
+            if (TRANSPOSE) Ap[i] = Ap[i] + A(j, i) * p[j];
+            else Ap[i] = Ap[i] + A(i, j) * p[j]
         }
     }
 
 }
-
 
 __global__ void sumVec(int N, double alpha, double* a, double beta, double* b)
 {
@@ -222,13 +152,16 @@ __global__ void copy(int N, double* a, double* b)
 
 }
 
-void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, const int BLOCK_HEIGHT)
+void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
+                     const int BLOCK_WIDTH, const int BLOCK_HEIGHT)
 {
 
     /**
     * Main function to solve the linear system Ax=b with conjugate gradient
     *
     * @param x initial guess, zero vector usually
+    * @param KERNEL_TYPE type of kernel, either naive or efficient
+    * @param TRANSPOSE true to compute A^T x in mat vec products to favour coalesced memory accesses
     * @param BLOCK_WIDTH width of the block for CUDA kernels
     * @param BLOCK_HEIGHT height of the block for CUDA kernels
     * @return void
@@ -254,10 +187,10 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     dim3 block_size(BLOCK_WIDTH);
     dim3 vec_grid_size((int) ceil(m_n / (double) block_size.x));
     dim3 matvec_grid_size;
-    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") || !std::strcmp(KERNEL_TYPE.c_str(), "NAIVE_T")) {
+    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
         matvec_grid_size = vec_grid_size;
     }
-    else if (!std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT") || !std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
+    else {
         matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
         matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
     }
@@ -272,16 +205,10 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
 
     // r = b - A * x;
     if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-        NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+        NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, x, Ap);
     }
-    else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-        NaiveMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
-    }
-    else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-        EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
-    }
-    else if (!std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
-        EfficientMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    else {
+        EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, x, Ap);
     }
     cudaDeviceSynchronize();
 
@@ -302,16 +229,10 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-            NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+            NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, p, Ap);
         }
-        else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-            NaiveMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
-        }
-        else if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-            EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
-        }
-        else if (!std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
-            EfficientMatVecTranspose<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        else {
+            EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, p, Ap);
         }
         cudaDeviceSynchronize();
 

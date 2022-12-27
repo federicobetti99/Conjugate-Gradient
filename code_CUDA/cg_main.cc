@@ -19,24 +19,26 @@ int main(int argc, char ** argv) {
 
     /// get type of kernel for matrix vector product
     std::string KERNEL_TYPE(argv[2]);
-    if (std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") && std::strcmp(KERNEL_TYPE.c_str(), "NAIVE_T") &&
-        std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT") && std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT_T")) {
+    if (std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") && std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT")) {
         throw std::invalid_argument("Received non available kernel for matrix vector product.\n"
                                     "Please, select one of the followings:\n"
                                     "1. NAIVE (One thread per row)\n"
-                                    "2. NAIVE_T (One thread per row with coalescing)\n"
-                                    "3. EFFICIENT (Multiple threads per row)\n"
-                                    "4. EFFICIENT_T (Multiple threads per row with coalescing)\n");
+                                    "2. EFFICIENT (Multiple threads per row)\n");
     }
 
+    bool TRANSPOSE;
+    std::string transpose(argv[3]);
+    if (transpose == "false") TRANSPOSE = false;
+    else TRANSPOSE = true;
+
     /// get number of threads per block
-    int BLOCK_WIDTH = std::stoi(argv[3]);
+    int BLOCK_WIDTH = std::stoi(argv[4]);
 
     /// get block width for matrix vector product grid
-    int BLOCK_HEIGHT = std::stoi(argv[4]);
+    int BLOCK_HEIGHT = std::stoi(argv[5]);
 
     /// file where to save the results
-    std::string OUTPUT_FILE(argv[5]);
+    std::string OUTPUT_FILE(argv[6]);
 
     /// initialize solver and read matrix from file
     CGSolver solver;
@@ -62,7 +64,7 @@ int main(int argc, char ** argv) {
     /// save results to file
     std::ofstream outfile;
     outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
-    outfile << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
+    outfile << TRANSPOSE.c_str() << " : " << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
     outfile.close();
 
     return 0;
