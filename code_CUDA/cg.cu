@@ -55,7 +55,7 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            if (TRANSPOSE) cSum += A(blockyInd + i, threadInd) * p[blockyInd + i];;
+            if (TRANSPOSE) cSum += A(blockyInd + i, threadInd) * p[blockyInd + i];
             else cSum += A(threadInd, blockxInd + i) * p[blockxInd + i];
 
         // atomic add these variables to the corresponding Ap index
@@ -92,7 +92,7 @@ __global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT
     if (i < N) {
         for (unsigned int j = 0; j < N; ++j) {
             if (TRANSPOSE) Ap[i] = Ap[i] + A(j, i) * p[j];
-            else Ap[i] = Ap[i] + A(i, j) * p[j]
+            else Ap[i] = Ap[i] + A(i, j) * p[j];
         }
     }
 

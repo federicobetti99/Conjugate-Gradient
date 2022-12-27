@@ -57,14 +57,14 @@ int main(int argc, char ** argv) {
 
     /// solve and print statistics
     auto t1 = clk::now();
-    solver.solve(x_d, KERNEL_TYPE, BLOCK_WIDTH, BLOCK_HEIGHT);
+    solver.solve(x_d, KERNEL_TYPE, TRANSPOSE, BLOCK_WIDTH, BLOCK_HEIGHT);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
     /// save results to file
     std::ofstream outfile;
     outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
-    outfile << TRANSPOSE.c_str() << " : " << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
+    outfile << TRANSPOSE << " : " << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
     outfile.close();
 
     return 0;
