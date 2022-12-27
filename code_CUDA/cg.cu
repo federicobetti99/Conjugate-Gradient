@@ -114,6 +114,7 @@ __global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT
                 Ap[i] = Ap[i] + A(j, i) * p[j];
             }
         }
+    }
     else {
         if (i < N) {
             for (unsigned int j = 0; j < N; ++j) {
