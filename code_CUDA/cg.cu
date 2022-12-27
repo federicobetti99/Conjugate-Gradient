@@ -36,30 +36,48 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
     __shared__ int blockxInd;
     __shared__ int blockyInd;
 
-    if (threadIdx.x == 0) {
-        if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
-            blockElt = BLOCK_WIDTH;
-        else blockElt = N % BLOCK_WIDTH;
-        blockxInd = blockIdx.x * BLOCK_WIDTH;
-        blockyInd = blockIdx.y * BLOCK_HEIGHT;
+    if (TRANSPOSE) {
+        if (threadIdx.x == 0) {
+            if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
+                blockElt = BLOCK_WIDTH;
+            else blockElt = N % BLOCK_WIDTH;
+            blockxInd = blockIdx.x * BLOCK_WIDTH;
+            blockyInd = blockIdx.y * BLOCK_HEIGHT;
+        }
+    }
+    else {
+        if (threadIdx.x == 0) {
+            if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
+                blockElt = BLOCK_WIDTH;
+            else blockElt = N % BLOCK_WIDTH;
+            blockxInd = blockIdx.x * BLOCK_WIDTH;
+            blockyInd = blockIdx.y * BLOCK_HEIGHT;
+        }
     }
 
     __syncthreads();
 
     // summing variable
     double cSum = 0.;
-    int threadInd = blockyInd + threadIdx.x;
+    int threadInd;
+    if (TRANSPOSE) threadInd = blockxInd + threadIdx.x;
+    else threadInd = blockyInd + threadIdx.x;
 
     // make sure we are inside the array horizontally (vertically if TRANSPOSE = true)
     if (threadInd < N) {
 
-        // go through the threads vertically and sum them into a variable
-        for (int i = 0; i < blockElt; i++)
-            if (TRANSPOSE) cSum += A(blockyInd + i, threadInd) * p[blockyInd + i];
-            else cSum += A(threadInd, blockxInd + i) * p[blockxInd + i];
-
-        // atomic add these variables to the corresponding Ap index
-        atomicAdd(Ap + threadInd, cSum);
+        if (TRANSPOSE) {
+            // go through the threads horizontally and sum them into a variable
+            for (int i = 0; i < blockElt; i++)
+                cSum += A(blockyInd + i, threadInd) * p[blockyInd + i];
+            atomicAdd(Ap + threadInd, cSum);
+        }
+        else {
+            // go through the threads vertically and sum them into a variable
+            for (int i = 0; i < blockElt; i++)
+                cSum += A(threadInd, blockxInd + i) * p[blockxInd + i];
+            atomicAdd(Ap + threadInd, cSum);
+        }
     }
 
 }
@@ -89,10 +107,18 @@ __global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT
     (void) BLOCK_HEIGHT;
 
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < N) {
-        for (unsigned int j = 0; j < N; ++j) {
-            if (TRANSPOSE) Ap[i] = Ap[i] + A(j, i) * p[j];
-            else Ap[i] = Ap[i] + A(i, j) * p[j];
+
+    if (TRANSPOSE) {
+        if (i < N) {
+            for (unsigned int j = 0; j < N; ++j) {
+                Ap[i] = Ap[i] + A(j, i) * p[j];
+            }
+        }
+    else {
+        if (i < N) {
+            for (unsigned int j = 0; j < N; ++j) {
+                Ap[i] = Ap[i] + A(i, j) * p[j];
+            }
         }
     }
 
@@ -191,8 +217,16 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
         matvec_grid_size = vec_grid_size;
     }
     else {
-        matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
-        matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
+        if (TRANSPOSE) {
+            matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_HEIGHT);
+            matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_WIDTH);
+        }
+        else {
+            matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
+            matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
+        }
+    }
+
     }
     
     // initialize cublas handle
