@@ -11,7 +11,7 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+__global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH,
                                 Matrix A, double* p, double* Ap)
 {
 
@@ -37,7 +37,7 @@ __global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGH
             blockElt = BLOCK_WIDTH;
         else blockElt = N % BLOCK_WIDTH;
         blockxInd = blockIdx.x * BLOCK_WIDTH;
-        blockyInd = blockIdx.y * BLOCK_HEIGHT;
+        blockyInd = blockIdx.y * NUM_THREADS;
     }
 
     __syncthreads();
@@ -156,7 +156,7 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
     fill<<<vec_grid_size, block_size>>>(m_n,  x, 0.0);
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
-    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, NUM_THREADS, m_A, x, Ap);
+    MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
     cudaDeviceSynchronize();
 
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
@@ -176,7 +176,7 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         cudaDeviceSynchronize();
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, NUM_THREADS, m_A, p, Ap);
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
