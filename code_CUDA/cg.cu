@@ -18,14 +18,10 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
     /**
     * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
     * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
-    * The efficiency of the kernel execution can be improved by setting TRANSPOSE = true, which exploits symmetry of
-    * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
-    * (coalesced memory access). This kernel with TRANPOSE = true gave overall the best results.
     *
     * @param N Size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block
     * @param BLOCK_HEIGHT height of the block
-    * @param TRANSPOSE true to compute A^T p instead for coalescing effects
     * @param A matrix
     * @param p vector
     * @param Ap vector for the result of A*p
@@ -82,21 +78,30 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
 
 }
 
+
+__global__ void EfficientMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+                                 Matrix A, double* p, double* Ap)
+{
+    /**
+    * The efficiency of the kernel execution can be improved by setting TRANSPOSE = true, which exploits symmetry of
+    * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
+    * (coalesced memory access). This kernel with TRANPOSE = true gave overall the best results.
+    */
+
+}
+
 __global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
-                            const bool TRANSPOSE, Matrix A, double* p, double* Ap)
+                            Matrix A, double* p, double* Ap)
 {
 
     /**
     * Naive kernel for matrix vector product, every thread takes care of the dot product between a row of A and p
-    * The efficiency of the kernel execution can be improved by setting TRANSPOSE = true, which exploits symmetry of
-    * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
-    * (coalesced memory access). Still, the amount of work per thread is O(N) and this is quite inefficient,
+    The amount of work per thread is O(N) and this is quite inefficient,
     * so low GPU occupancy is likely to be observed when the number of threads per block increases
     *
     * @param N size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block, not used
     * @param BLOCK_HEIGHT height of the block, not used
-    * @param TRANSPOSE true to compute A^T p for coalescing effects
     * @param A matrix
     * @param p vector
     * @param Ap vector for the result of A*p
@@ -108,18 +113,40 @@ __global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT
 
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (TRANSPOSE) {
-        if (i < N) {
-            for (unsigned int j = 0; j < N; ++j) {
-                Ap[i] = Ap[i] + A(j, i) * p[j];
-            }
+    if (i < N) {
+        for (unsigned int j = 0; j < N; ++j) {
+            Ap[i] = Ap[i] + A(i, j) * p[j];
         }
     }
-    else {
-        if (i < N) {
-            for (unsigned int j = 0; j < N; ++j) {
-                Ap[i] = Ap[i] + A(i, j) * p[j];
-            }
+
+}
+
+
+__global__ void NaiveMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+                             Matrix A, double* p, double* Ap)
+{
+    /**
+    * Improves efficiency of the kernel NaiveMatVec execution by exploiting symmetry of
+    * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
+    * (coalesced memory access).
+    *
+    * @param N size of the matrix (always assumed square)
+    * @param BLOCK_WIDTH width of the block, not used
+    * @param BLOCK_HEIGHT height of the block, not used
+    * @param A matrix
+    * @param p vector
+    * @param Ap vector for the result of A*p
+    * @return void
+    */
+
+    (void) BLOCK_WIDTH;
+    (void) BLOCK_HEIGHT;
+
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < N) {
+        for (unsigned int j = 0; j < N; ++j) {
+            Ap[i] = Ap[i] + A(j, i) * p[j];
         }
     }
 
@@ -179,8 +206,7 @@ __global__ void copy(int N, double* a, double* b)
 
 }
 
-void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
-                     const int BLOCK_WIDTH, const int BLOCK_HEIGHT)
+void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, const int BLOCK_HEIGHT)
 {
 
     /**
@@ -188,7 +214,126 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
     *
     * @param x initial guess, zero vector usually
     * @param KERNEL_TYPE type of kernel, either naive or efficient
-    * @param TRANSPOSE true to compute A^T x in mat vec products to favour coalesced memory accesses
+    * @param BLOCK_WIDTH width of the block for CUDA kernels
+    * @param BLOCK_HEIGHT height of the block for CUDA kernels
+    * @return void
+    */
+
+    double *r;
+    double *p;
+    double *Ap;
+    double *tmp;
+
+    cudaMallocManaged(&r, m_n * sizeof(double));
+    cudaMallocManaged(&p, m_n * sizeof(double));
+    cudaMallocManaged(&Ap, m_n * sizeof(double));
+    cudaMallocManaged(&tmp, m_n * sizeof(double));
+
+    double conj, rsnew, rsold;
+    double *conj_, *rsnew_, *rsold_;
+    cudaMallocManaged(&conj_, sizeof(double));
+    cudaMallocManaged(&rsnew_, sizeof(double));
+    cudaMallocManaged(&rsold_, sizeof(double));
+
+    // define grid size for linear combination of vectors
+    dim3 block_size(BLOCK_WIDTH);
+    dim3 vec_grid_size((int) ceil(m_n / (double) block_size.x));
+    dim3 matvec_grid_size;
+    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+        matvec_grid_size = vec_grid_size;
+    }
+    else {
+        matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
+        matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
+    }
+    
+    // initialize cublas handle
+    cublasHandle_t h;
+    cublasCreate(&h);
+
+    // initialize vectors
+    fill<<<vec_grid_size, block_size>>>(m_n,  x, 0.0);
+    fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
+
+    // r = b - A * x;
+    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+        NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    }
+    else {
+        EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    }
+    cudaDeviceSynchronize();
+
+    copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
+    sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
+
+    // p = r
+    copy<<<vec_grid_size, block_size>>>(m_n, p, r);
+    
+    // rsold = r' * r;
+    cublasDdot(h, m_n, r, 1, p, 1, rsold_);
+    cudaMemcpy(&rsold, rsold_, sizeof(double), cudaMemcpyDeviceToHost);
+
+    // for i = 1:length(b)
+    int k = 0;
+    for (; k < m_n; ++k) {
+
+        // Ap = A * p;
+        fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
+        if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
+            NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        }
+        else {
+            EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        }
+        cudaDeviceSynchronize();
+
+        // alpha = rsold / (p' * Ap);
+        cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
+        cudaMemcpy(&conj, conj_, sizeof(double), cudaMemcpyDeviceToHost);
+        double alpha = rsold / std::max(conj, rsold * NEARZERO);
+        
+        // x = x + alpha * p;
+        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., x, alpha, p);
+
+        // r = r - alpha * Ap;
+        sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -alpha, Ap);
+
+        // rsnew = r' * r;
+        cublasDdot(h, m_n, r, 1, r, 1, rsnew_);
+        cudaMemcpy(&rsnew, rsnew_, sizeof(double), cudaMemcpyDeviceToHost);
+
+        /// CUDA: synchronize to be sure about computation of the residual
+        cudaDeviceSynchronize();
+        
+        if (std::sqrt(rsnew) < m_tolerance) break; // Convergence test
+            
+        // p = r + (rsnew / rsold) * p;
+        double beta = rsnew / rsold;
+        sumVec<<<vec_grid_size, block_size>>>(m_n, beta, p, 1., r);
+
+        // prepare next iteration and print statistics
+        rsold = rsnew;
+        if (DEBUG) std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
+    }
+
+    cudaFree(&r);
+    cudaFree(&tmp);
+    cudaFree(&p);
+    cudaFree(&Ap);
+
+    cublasDestroy(h);
+
+}
+
+void CGSolver::solveT(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, const int BLOCK_HEIGHT)
+{
+
+    /**
+    * Main function to solve the linear system Ax=b with conjugate gradient with coalescing for matrix vector products
+    *
+    * @param x initial guess, zero vector usually
+    * @param KERNEL_TYPE type of kernel, either naive or efficient
     * @param BLOCK_WIDTH width of the block for CUDA kernels
     * @param BLOCK_HEIGHT height of the block for CUDA kernels
     * @return void
@@ -227,7 +372,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
             matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
         }
     }
-    
+
     // initialize cublas handle
     cublasHandle_t h;
     cublasCreate(&h);
@@ -250,7 +395,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
 
     // p = r
     copy<<<vec_grid_size, block_size>>>(m_n, p, r);
-    
+
     // rsold = r' * r;
     cublasDdot(h, m_n, r, 1, p, 1, rsold_);
     cudaMemcpy(&rsold, rsold_, sizeof(double), cudaMemcpyDeviceToHost);
@@ -273,7 +418,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
         cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
         cudaMemcpy(&conj, conj_, sizeof(double), cudaMemcpyDeviceToHost);
         double alpha = rsold / std::max(conj, rsold * NEARZERO);
-        
+
         // x = x + alpha * p;
         sumVec<<<vec_grid_size, block_size>>>(m_n, 1., x, alpha, p);
 
@@ -286,9 +431,9 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const bool TRANSPOSE,
 
         /// CUDA: synchronize to be sure about computation of the residual
         cudaDeviceSynchronize();
-        
+
         if (std::sqrt(rsnew) < m_tolerance) break; // Convergence test
-            
+
         // p = r + (rsnew / rsold) * p;
         double beta = rsnew / rsold;
         sumVec<<<vec_grid_size, block_size>>>(m_n, beta, p, 1., r);
