@@ -26,19 +26,14 @@ int main(int argc, char ** argv) {
                                     "2. EFFICIENT (Multiple threads per row)\n");
     }
 
-    bool TRANSPOSE;
-    std::string transpose(argv[3]);
-    if (transpose == "false") TRANSPOSE = false;
-    else TRANSPOSE = true;
-
     /// get number of threads per block
-    int BLOCK_WIDTH = std::stoi(argv[4]);
+    int BLOCK_WIDTH = std::stoi(argv[3]);
 
     /// get block width for matrix vector product grid
-    int BLOCK_HEIGHT = std::stoi(argv[5]);
+    int BLOCK_HEIGHT = std::stoi(argv[4]);
 
     /// file where to save the results
-    std::string OUTPUT_FILE(argv[6]);
+    std::string OUTPUT_FILE(argv[5]);
 
     /// initialize solver and read matrix from file
     CGSolver solver;
@@ -57,15 +52,14 @@ int main(int argc, char ** argv) {
 
     /// solve and print statistics
     auto t1 = clk::now();
-    if (!TRANSPOSE) solver.solve(x_d, KERNEL_TYPE, BLOCK_WIDTH, BLOCK_HEIGHT);
-    else solver.solveT(x_d, KERNEL_TYPE, BLOCK_WIDTH, BLOCK_HEIGHT);
+    solver.solve(x_d, KERNEL_TYPE, BLOCK_WIDTH, BLOCK_HEIGHT);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
     /// save results to file
     std::ofstream outfile;
     outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
-    outfile << KERNEL_TYPE << "," << TRANSPOSE << "," << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
+    outfile << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
     outfile.close();
 
     return 0;
