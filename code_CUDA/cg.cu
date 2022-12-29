@@ -367,8 +367,8 @@ void CGSolver::solveT(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH,
     cudaMallocManaged(&rsold_, sizeof(double));
 
     // define grid size for linear combination of vectors
-    dim3 block_size(BLOCK_WIDTH);
-    dim3 vec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH));
+    dim3 block_size(BLOCK_HEIGHT);
+    dim3 vec_grid_size((int) ceil(m_n / (double) BLOCK_HEIGHT));
     dim3 matvec_grid_size;
     if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
         matvec_grid_size = vec_grid_size;
