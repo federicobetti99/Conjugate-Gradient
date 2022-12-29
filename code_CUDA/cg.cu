@@ -42,6 +42,13 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
 
     __syncthreads();
 
+    extern __shared__ double b[];
+
+    if (threadIdx.x < blockElt)
+        b[threadIdx.x] = p[blockxInd + threadIdx.x];
+
+    __syncthreads();
+
     // summing variable
     double cSum = 0.;
     int threadyInd = blockyInd + threadIdx.x;
@@ -51,7 +58,7 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
+            cSum += A(threadyInd, blockxInd + i) * b[i];
 
         atomicAdd(Ap + threadyInd, cSum);
     }
@@ -194,7 +201,8 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
         NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
     }
     else {
-        EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+        EfficientMatVec<<<matvec_grid_size, block_size, BLOCK_WIDTH * sizeof(double)>>>(m_n, BLOCK_WIDTH,
+                                                                                        BLOCK_HEIGHT, m_A, x, Ap);
     }
     cudaDeviceSynchronize();
 
@@ -219,7 +227,8 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
             NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
         }
         else {
-            EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+            EfficientMatVec<<<matvec_grid_size, block_size, BLOCK_WIDTH * sizeof(double)>>>(m_n, BLOCK_WIDTH,
+                                                                                            BLOCK_HEIGHT, m_A, p, Ap);
         }
         cudaDeviceSynchronize();
 
