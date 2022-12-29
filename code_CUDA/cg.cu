@@ -12,7 +12,7 @@ const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
 __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
-                                const bool TRANSPOSE, Matrix A, double* p, double* Ap)
+                                Matrix A, double* p, double* Ap)
 {
 
     /**
@@ -75,6 +75,10 @@ __global__ void EfficientMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_H
     * @param Ap vector for the result of A*p
     * @return void
     */
+
+    __shared__ int blockElt;
+    __shared__ int blockxInd;
+    __shared__ int blockyInd;
 
     if (threadIdx.x == 0) {
         if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
