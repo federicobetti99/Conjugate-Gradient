@@ -112,7 +112,7 @@ __global__ void copy(int N, double* a, double* b)
 
 }
 
-void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, const int BLOCK_HEIGHT)
+void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
 {
 
     /**
@@ -121,7 +121,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     * @param x initial guess, zero vector usually
     * @param KERNEL_TYPE type of kernel, either naive or efficient
     * @param BLOCK_WIDTH width of the block for CUDA kernels
-    * @param BLOCK_HEIGHT height of the block for CUDA kernels
+    * @param NUM_THREADS number of threads per block
     * @return void
     */
 
@@ -142,11 +142,11 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     cudaMallocManaged(&rsold_, sizeof(double));
 
     // define grid size for linear combination of vectors
-    dim3 block_size(BLOCK_WIDTH);
-    dim3 vec_grid_size(ceil(m_n / (double) BLOCK_WIDTH));
+    dim3 block_size(NUM_THREADS);
+    dim3 vec_grid_size(ceil(m_n / (double) NUM_THREADS));
     dim3 matvec_grid_size;
     matvec_grid_size.x = ceil(m_n / (double) BLOCK_WIDTH);
-    matvec_grid_size.y = ceil(m_m / (double) BLOCK_HEIGHT);
+    matvec_grid_size.y = ceil(m_m / (double) NUM_THREADS);
     
     // initialize cublas handle
     cublasHandle_t h;
@@ -156,7 +156,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     fill<<<vec_grid_size, block_size>>>(m_n,  x, 0.0);
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
-    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
+    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, NUM_THREADS, m_A, x, Ap);
     cudaDeviceSynchronize();
 
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
@@ -176,7 +176,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         cudaDeviceSynchronize();
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, NUM_THREADS, m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
