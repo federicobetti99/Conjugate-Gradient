@@ -17,23 +17,14 @@ int main(int argc, char ** argv) {
 
     if (argc < 2) usage(argv[0]);
 
-    /// get type of kernel for matrix vector product
-    std::string KERNEL_TYPE(argv[2]);
-    if (std::strcmp(KERNEL_TYPE.c_str(), "NAIVE") && std::strcmp(KERNEL_TYPE.c_str(), "EFFICIENT")) {
-        throw std::invalid_argument("Received non available kernel for matrix vector product.\n"
-                                    "Please, select one of the followings:\n"
-                                    "1. NAIVE (One thread per row)\n"
-                                    "2. EFFICIENT (Multiple threads per row)\n");
-    }
-
     /// get number of threads per block
-    int BLOCK_WIDTH = std::stoi(argv[3]);
+    int NUM_THREADS = std::stoi(argv[2]);
 
     /// get block width for matrix vector product grid
-    int BLOCK_HEIGHT = std::stoi(argv[4]);
+    int BLOCK_WIDTH = std::stoi(argv[3]);
 
     /// file where to save the results
-    std::string OUTPUT_FILE(argv[5]);
+    std::string OUTPUT_FILE(argv[4]);
 
     /// initialize solver and read matrix from file
     CGSolver solver;
@@ -52,14 +43,14 @@ int main(int argc, char ** argv) {
 
     /// solve and print statistics
     auto t1 = clk::now();
-    solver.solve(x_d, KERNEL_TYPE, BLOCK_WIDTH, BLOCK_HEIGHT);
+    solver.solve(x_d, NUM_THREADS, BLOCK_WIDTH);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
     /// save results to file
     std::ofstream outfile;
     outfile.open(OUTPUT_FILE.c_str(), std::ios_base::app);
-    outfile << BLOCK_WIDTH << "," << BLOCK_HEIGHT << "," << elapsed.count() << std::endl;
+    outfile << NUM_THREADS << "," << BLOCK_WIDTH << "," << elapsed.count() << std::endl;
     outfile.close();
 
     return 0;

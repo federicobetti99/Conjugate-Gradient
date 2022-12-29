@@ -26,10 +26,7 @@ public:
     inline int n() const { return m_n; }
 
     /// solve linear system with iterative CG
-    void solve(double *x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, int BLOCK_HEIGHT);
-
-    /// solve linear system with iterative CG and coalescing
-    void solveT(double *x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, int BLOCK_HEIGHT);
+    void solve(double *x, int NUM_THREADS, int BLOCK_WIDTH);
 
 protected:
     /// initialize m and n
