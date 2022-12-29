@@ -32,48 +32,28 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
     __shared__ int blockxInd;
     __shared__ int blockyInd;
 
-    if (TRANSPOSE) {
-        if (threadIdx.x == 0) {
-            if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
-                blockElt = BLOCK_WIDTH;
-            else blockElt = N % BLOCK_WIDTH;
-            blockxInd = blockIdx.x * BLOCK_WIDTH;
-            blockyInd = blockIdx.y * BLOCK_HEIGHT;
-        }
-    }
-    else {
-        if (threadIdx.x == 0) {
-            if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
-                blockElt = BLOCK_WIDTH;
-            else blockElt = N % BLOCK_WIDTH;
-            blockxInd = blockIdx.x * BLOCK_WIDTH;
-            blockyInd = blockIdx.y * BLOCK_HEIGHT;
-        }
+    if (threadIdx.x == 0) {
+        if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
+            blockElt = BLOCK_WIDTH;
+        else blockElt = N % BLOCK_WIDTH;
+        blockxInd = blockIdx.x * BLOCK_WIDTH;
+        blockyInd = blockIdx.y * BLOCK_HEIGHT;
     }
 
     __syncthreads();
 
     // summing variable
     double cSum = 0.;
-    int threadInd;
-    if (TRANSPOSE) threadInd = blockxInd + threadIdx.x;
-    else threadInd = blockyInd + threadIdx.x;
+    int threadyInd = blockyInd + threadIdx.x;
 
-    // make sure we are inside the array horizontally (vertically if TRANSPOSE = true)
-    if (threadInd < N) {
+    // make sure we are inside the array horizontally
+    if (threadyInd < N) {
 
-        if (TRANSPOSE) {
-            // go through the threads horizontally and sum them into a variable
-            for (int i = 0; i < blockElt; i++)
-                cSum += A(blockyInd + i, threadInd) * p[blockyInd + i];
-            atomicAdd(Ap + threadInd, cSum);
-        }
-        else {
-            // go through the threads vertically and sum them into a variable
-            for (int i = 0; i < blockElt; i++)
-                cSum += A(threadInd, blockxInd + i) * p[blockxInd + i];
-            atomicAdd(Ap + threadInd, cSum);
-        }
+        // go through the threads vertically and sum them into a variable
+        for (int i = 0; i < blockElt; i++)
+            cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
+
+        atomicAdd(Ap + threadyInd, cSum);
     }
 
 }
@@ -87,6 +67,32 @@ __global__ void EfficientMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_H
     * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
     * (coalesced memory access). This kernel with TRANPOSE = true gave overall the best results.
     */
+    if (threadIdx.x == 0) {
+        if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
+            blockElt = BLOCK_WIDTH;
+        else blockElt = N % BLOCK_WIDTH;
+        blockxInd = blockIdx.x * BLOCK_WIDTH;
+        blockyInd = blockIdx.y * BLOCK_HEIGHT;
+    }
+
+    __syncthreads();
+
+    // summing variable
+    double cSum = 0.;
+    int threadxInd = blockyInd + threadIdx.x;
+
+    // make sure we are inside the array vertically
+    if (threadxInd < N) {
+
+        // go through the threads vertically and sum them into a variable
+        for (int i = 0; i < blockElt; i++)
+            cSum += A(blockyInd + i, threadxInd) * p[blockyInd + i];
+
+        atomicAdd(Ap + threadxInd, cSum);
+    }
+
+
+
 
 }
 
@@ -237,7 +243,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
 
     // define grid size for linear combination of vectors
     dim3 block_size(BLOCK_WIDTH);
-    dim3 vec_grid_size((int) ceil(m_n / (double) block_size.x));
+    dim3 vec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH));
     dim3 matvec_grid_size;
     if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
         matvec_grid_size = vec_grid_size;
@@ -357,20 +363,14 @@ void CGSolver::solveT(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH,
 
     // define grid size for linear combination of vectors
     dim3 block_size(BLOCK_WIDTH);
-    dim3 vec_grid_size((int) ceil(m_n / (double) block_size.x));
+    dim3 vec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH));
     dim3 matvec_grid_size;
     if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
         matvec_grid_size = vec_grid_size;
     }
     else {
-        if (TRANSPOSE) {
-            matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_HEIGHT);
-            matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_WIDTH);
-        }
-        else {
-            matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
-            matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
-        }
+        matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
+        matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
     }
 
     // initialize cublas handle
@@ -383,10 +383,10 @@ void CGSolver::solveT(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH,
 
     // r = b - A * x;
     if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-        NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, x, Ap);
+        NaiveMatVecT<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
     }
     else {
-        EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, x, Ap);
+        EfficientMatVecT<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
     }
     cudaDeviceSynchronize();
 
@@ -407,10 +407,10 @@ void CGSolver::solveT(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH,
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-            NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, p, Ap);
+            NaiveMatVecT<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
         }
         else {
-            EfficientMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, TRANSPOSE, m_A, p, Ap);
+            EfficientMatVecT<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
         }
         cudaDeviceSynchronize();
 
