@@ -11,7 +11,7 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
+__global__ void MatVec(const int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
                                 Matrix A, double* p, double* Ap)
 {
 
@@ -42,13 +42,6 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
 
     __syncthreads();
 
-    extern __shared__ double b[];
-
-    if (threadIdx.x < blockElt)
-        b[threadIdx.x] = p[blockxInd + threadIdx.x];
-
-    __syncthreads();
-
     // summing variable
     double cSum = 0.;
     int threadyInd = blockyInd + threadIdx.x;
@@ -58,37 +51,9 @@ __global__ void EfficientMatVec(const int N, const int BLOCK_WIDTH, const int BL
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += A(threadyInd, blockxInd + i) * b[i];
+            cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
 
         atomicAdd(Ap + threadyInd, cSum);
-    }
-
-}
-
-__global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT,
-                            Matrix A, double* p, double* Ap)
-{
-
-    /**
-    * Naive kernel for matrix vector product, every thread takes care of the dot product between a row of A and p
-    The amount of work per thread is O(N) and this is quite inefficient,
-    * so low GPU occupancy is likely to be observed when the number of threads per block increases
-    *
-    * @param N size of the matrix (always assumed square)
-    * @param BLOCK_WIDTH width of the block, not used
-    * @param BLOCK_HEIGHT height of the block, not used
-    * @param A matrix
-    * @param p vector
-    * @param Ap vector for the result of A*p
-    * @return void
-    */
-
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (i < N) {
-        for (unsigned int j = 0; j < N; ++j) {
-            Ap[i] = Ap[i] + A(i, j) * p[j];
-        }
     }
 
 }
@@ -180,13 +145,8 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     dim3 block_size(BLOCK_WIDTH);
     dim3 vec_grid_size(ceil(m_n / (double) BLOCK_WIDTH));
     dim3 matvec_grid_size;
-    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-        matvec_grid_size = vec_grid_size;
-    }
-    else {
-        matvec_grid_size.x = ceil(m_n / (double) BLOCK_WIDTH);
-        matvec_grid_size.y = ceil(m_m / (double) BLOCK_HEIGHT);
-    }
+    matvec_grid_size.x = ceil(m_n / (double) BLOCK_WIDTH);
+    matvec_grid_size.y = ceil(m_m / (double) BLOCK_HEIGHT);
     
     // initialize cublas handle
     cublasHandle_t h;
@@ -196,14 +156,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     fill<<<vec_grid_size, block_size>>>(m_n,  x, 0.0);
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
-    // r = b - A * x;
-    if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-        NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
-    }
-    else {
-        EfficientMatVec<<<matvec_grid_size, block_size, BLOCK_WIDTH * sizeof(double)>>>(m_n, BLOCK_WIDTH,
-                                                                                        BLOCK_HEIGHT, m_A, x, Ap);
-    }
+    MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, x, Ap);
     cudaDeviceSynchronize();
 
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
@@ -223,13 +176,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         cudaDeviceSynchronize();
-        if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
-            NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
-        }
-        else {
-            EfficientMatVec<<<matvec_grid_size, block_size, BLOCK_WIDTH * sizeof(double)>>>(m_n, BLOCK_WIDTH,
-                                                                                            BLOCK_HEIGHT, m_A, p, Ap);
-        }
+        MatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);
