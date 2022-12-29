@@ -84,8 +84,8 @@ __global__ void EfficientMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_H
         if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
             blockElt = BLOCK_WIDTH;
         else blockElt = N % BLOCK_WIDTH;
-        blockxInd = blockIdx.x * BLOCK_WIDTH;
-        blockyInd = blockIdx.y * BLOCK_HEIGHT;
+        blockxInd = blockIdx.x * BLOCK_HEIGHT;
+        blockyInd = blockIdx.y * BLOCK_WIDTH;
     }
 
     __syncthreads();
@@ -124,9 +124,6 @@ __global__ void NaiveMatVec(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGHT
     * @return void
     */
 
-    (void) BLOCK_WIDTH;
-    (void) BLOCK_HEIGHT;
-
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (i < N) {
@@ -154,9 +151,6 @@ __global__ void NaiveMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_HEIGH
     * @param Ap vector for the result of A*p
     * @return void
     */
-
-    (void) BLOCK_WIDTH;
-    (void) BLOCK_HEIGHT;
 
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -252,8 +246,8 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
     cudaMallocManaged(&rsold_, sizeof(double));
 
     // define grid size for linear combination of vectors
-    dim3 block_size(BLOCK_WIDTH);
-    dim3 vec_grid_size((int) ceil(m_n / (double) BLOCK_WIDTH));
+    dim3 block_size(BLOCK_HEIGHT);
+    dim3 vec_grid_size((int) ceil(m_n / (double) BLOCK_HEIGHT));
     dim3 matvec_grid_size;
     if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
         matvec_grid_size = vec_grid_size;
@@ -296,6 +290,7 @@ void CGSolver::solve(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH, 
 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
+        cudaDeviceSynchronize();
         if (!std::strcmp(KERNEL_TYPE.c_str(), "NAIVE")) {
             NaiveMatVec<<<matvec_grid_size, block_size>>>(m_n, BLOCK_WIDTH, BLOCK_HEIGHT, m_A, p, Ap);
         }
@@ -379,8 +374,8 @@ void CGSolver::solveT(double* x, std::string KERNEL_TYPE, const int BLOCK_WIDTH,
         matvec_grid_size = vec_grid_size;
     }
     else {
-        matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_WIDTH);
-        matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_HEIGHT);
+        matvec_grid_size.x = (int) ceil(m_n / (double) BLOCK_HEIGHT);
+        matvec_grid_size.y = (int) ceil(m_m / (double) BLOCK_WIDTH);
     }
 
     // initialize cublas handle
