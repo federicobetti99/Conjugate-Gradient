@@ -15,16 +15,14 @@ make
 rm ../results/CUDA.txt
 
 for BLOCK_WIDTH in 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024; do
-  srun ./cgsolver lap2D_5pt_n100.mtx NAIVE false 1 $BLOCK_WIDTH ../results/CUDA.txt
-done
-
-for BLOCK_WIDTH in 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024; do
-  srun ./cgsolver lap2D_5pt_n100.mtx NAIVE true $BLOCK_WIDTH 1 ../results/CUDA.txt
+  for BLOCK_HEIGHT in 1, 4, 16, 64, 256, 1024; do
+     srun ./cgsolver lap2D_5pt_n100.mtx EFFICIENT false $BLOCK_WIDTH $BLOCK_HEIGHT ../results/CUDA.txt
+  done
 done
 
 for BLOCK_WIDTH in 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024; do
   for BLOCK_HEIGHT in 1, 4, 16, 64, 256, 1024; do
-     srun ./cgsolver lap2D_5pt_n100.mtx EFFICIENT false $BLOCK_WIDTH $BLOCK_HEIGHT ../results/CUDA.txt
-     srun ./cgsolver lap2D_5pt_n100.mtx EFFICIENT true  $BLOCK_HEIGHT $BLOCK_WIDTH ../results/CUDA.txt
+     srun ./cgsolver lap2D_5pt_n100.mtx EFFICIENT true $BLOCK_WIDTH $BLOCK_HEIGHT ../results/CUDA.txt
   done
 done
+
