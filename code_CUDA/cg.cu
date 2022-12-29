@@ -63,10 +63,19 @@ __global__ void EfficientMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_H
                                  Matrix A, double* p, double* Ap)
 {
     /**
-    * The efficiency of the kernel execution can be improved by setting TRANSPOSE = true, which exploits symmetry of
+    * The efficiency of the kernel EfficientMatVec can be improved exploiting symmetry of
     * the matrix A and hence makes sure that neighbouring threads are requesting access to neighbouring data in memory
-    * (coalesced memory access). This kernel with TRANPOSE = true gave overall the best results.
+    * (coalesced memory access). This kernel gave overall the best results.
+    *
+    * @param N Size of the matrix (always assumed square)
+    * @param BLOCK_WIDTH width of the block
+    * @param BLOCK_HEIGHT height of the block
+    * @param A matrix
+    * @param p vector
+    * @param Ap vector for the result of A*p
+    * @return void
     */
+
     if (threadIdx.x == 0) {
         if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
             blockElt = BLOCK_WIDTH;
@@ -90,9 +99,6 @@ __global__ void EfficientMatVecT(int N, const int BLOCK_WIDTH, const int BLOCK_H
 
         atomicAdd(Ap + threadxInd, cSum);
     }
-
-
-
 
 }
 
