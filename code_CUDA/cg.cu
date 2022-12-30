@@ -51,7 +51,7 @@ __global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += A(threadxInd, blockyInd + i) * p[blockyInd + i];
+            cSum += A(blockyInd + i, threadxInd) * p[blockyInd + i];
 
         atomicAdd(Ap + threadxInd, cSum);
     }
