@@ -33,27 +33,27 @@ __global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH
     __shared__ int blockyInd;
 
     if (threadIdx.x == 0) {
-        if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
+        if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
             blockElt = BLOCK_WIDTH;
         else blockElt = N % BLOCK_WIDTH;
-        blockxInd = blockIdx.x * BLOCK_WIDTH;
-        blockyInd = blockIdx.y * NUM_THREADS;
+        blockxInd = blockIdx.x * NUM_THREADS;
+        blockyInd = blockIdx.y * BLOCK_WIDTH;
     }
 
     __syncthreads();
 
     // summing variable
     double cSum = 0.;
-    int threadyInd = blockyInd + threadIdx.x;
+    int threadxInd = blockxInd + threadIdx.x;
 
     // make sure we are inside the array horizontally
-    if (threadyInd < N) {
+    if (threadxInd < N) {
 
         // go through the threads vertically and sum them into a variable
         for (int i = 0; i < blockElt; i++)
-            cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
+            cSum += A(threadxInd, blockyInd + i) * p[blockyInd + i];
 
-        atomicAdd(Ap + threadyInd, cSum);
+        atomicAdd(Ap + threadxInd, cSum);
     }
 
 }
@@ -145,8 +145,8 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
     dim3 block_size(NUM_THREADS);
     dim3 vec_grid_size(ceil(m_n / (double) NUM_THREADS));
     dim3 matvec_grid_size;
-    matvec_grid_size.x = ceil(m_n / (double) BLOCK_WIDTH);
-    matvec_grid_size.y = ceil(m_m / (double) NUM_THREADS);
+    matvec_grid_size.x = ceil(m_n / (double) NUM_THREADS);
+    matvec_grid_size.y = ceil(m_m / (double) BLOCK_WIDTH);
     
     // initialize cublas handle
     cublasHandle_t h;
