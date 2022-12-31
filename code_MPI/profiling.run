@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH --nodes=2
+#SBATCH --account=math-454
+
+module purge
+module load gcc openblas
+module load mvapich2
+
+make
+
+rm ../results/profiling.txt
+
+# STRONG SCALING PROFILING
+perf record -o perf.data --call-graph dwarf ./cgsolver 8192 ../results/profiling.txt
+
+# WEAK SCALING PROFILING
+perf record -o perf.data --call-graph dwarf ./cgsolver 2048 ../results/profiling.txt 200
+perf record -o perf.data --call-graph dwarf ./cgsolver 2896 ../results/profiling.txt 200
+perf record -o perf.data --call-graph dwarf ./cgsolver 4096 ../results/profiling.txt 200
+perf record -o perf.data --call-graph dwarf ./cgsolver 5792 ../results/profiling.txt 200
+perf record -o perf.data --call-graph dwarf ./cgsolver 8192 ../results/profiling.txt 200
+perf record -o perf.data --call-graph dwarf ./cgsolver 11585 ../results/profiling.txt 200
+perf record -o perf.data --call-graph dwarf ./cgsolver 16384 ../results/profiling.txt 200
