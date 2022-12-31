@@ -11,8 +11,11 @@ make
 rm ../results/strong_scaling.txt
 rm ../results/weak_scaling.txt
 
+# STRONG SCALING PROFILING
+perf record -o perf1.data --call-graph dwarf ./cgsolver 8192 ../results/profiling.txt
+
 # STRONG SCALING EXPERIMENTS
-for N in 1024 2048 4096 8192; do
+for N in 1024 2048 4096 8192 16384; do
   srun -n 1 ./cgsolver  $N ../results/strong_scaling.txt
   srun -n 2 ./cgsolver  $N ../results/strong_scaling.txt
   srun -n 4 ./cgsolver  $N ../results/strong_scaling.txt
@@ -21,6 +24,15 @@ for N in 1024 2048 4096 8192; do
   srun -n 32 ./cgsolver $N ../results/strong_scaling.txt
   srun -n 64 ./cgsolver $N ../results/strong_scaling.txt
 done
+
+## WEAK SCALING PROFILING
+perf record -o perf1.data --call-graph dwarf ./cgsolver 2048  ../results/profiling.txt 200
+perf record -o perf2.data --call-graph dwarf ./cgsolver 2896  ../results/profiling.txt 200
+perf record -o perf3.data --call-graph dwarf ./cgsolver 4096  ../results/profiling.txt 200
+perf record -o perf4.data --call-graph dwarf ./cgsolver 5792  ../results/profiling.txt 200
+perf record -o perf5.data --call-graph dwarf ./cgsolver 8192  ../results/profiling.txt 200
+perf record -o perf6.data --call-graph dwarf ./cgsolver 11585 ../results/profiling.txt 200
+perf record -o perf7.data --call-graph dwarf ./cgsolver 16384 ../results/profiling.txt 200
 
 # WEAK SCALING EXPERIMENTS
 srun -n 1 ./cgsolver 2048 ../results/weak_scaling.txt 200
