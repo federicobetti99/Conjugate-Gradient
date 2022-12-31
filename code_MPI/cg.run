@@ -11,9 +11,6 @@ make
 rm ../results/strong_scaling.txt
 rm ../results/weak_scaling.txt
 
-# STRONG SCALING PROFILING
-perf record -o perf.data --call-graph dwarf ./cgsolver 8192 ../results/profiling.txt
-
 # STRONG SCALING EXPERIMENTS
 for N in 1024 2048 4096 8192 16384; do
   srun -n 1 ./cgsolver  $N ../results/strong_scaling.txt

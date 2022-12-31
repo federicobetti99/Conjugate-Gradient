@@ -46,12 +46,15 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     * @return void
     */
 
-    int prank;
+    int prank, psize;
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
+    MPI_Comm_size(MPI_COMM_WORLD, &psize);
 
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
-    Matrix A_sub = get_submatrix(m_A, num_rows[prank], start_rows[prank]);
+    Matrix A_sub;
+    if (psize > 1) A_sub = get_submatrix(m_A, num_rows[prank], start_rows[prank]);
+    else A_sub = m_A;
 
     // initialize conjugated direction, residual and solution for current prank
     int N_loc = A_sub.m();
