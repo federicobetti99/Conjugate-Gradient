@@ -26,7 +26,7 @@ public:
     inline int n() const { return m_n; }
 
     /// solve linear system with iterative CG
-    void solve(double *x, int NUM_THREADS, int BLOCK_WIDTH);
+    void solve(double *x, int NUM_THREADS, int BLOCK_WIDTH, bool T);
 
 protected:
     /// initialize m and n

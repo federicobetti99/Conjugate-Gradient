@@ -23,8 +23,14 @@ int main(int argc, char ** argv) {
     /// get block width for matrix vector product grid
     int BLOCK_WIDTH = std::stoi(argv[3]);
 
+    /// get type of kernel for matrix vector products
+    bool T;
+    std::string transpose(argv[4]);
+    if (transpose == "true") T = true;
+    else T = false;
+
     /// file where to save the results
-    std::string OUTPUT_FILE(argv[4]);
+    std::string OUTPUT_FILE(argv[5]);
 
     /// initialize solver and read matrix from file
     CGSolver solver;
@@ -43,7 +49,7 @@ int main(int argc, char ** argv) {
 
     /// solve and print statistics
     auto t1 = clk::now();
-    solver.solve(x_d, NUM_THREADS, BLOCK_WIDTH);
+    solver.solve(x_d, NUM_THREADS, BLOCK_WIDTH, T);
     second elapsed = clk::now() - t1;
     std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 

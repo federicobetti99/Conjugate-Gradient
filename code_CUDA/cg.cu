@@ -11,13 +11,62 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH,
+__global__ void MatVecT(const int N, const int NUM_THREADS, const int BLOCK_WIDTH,
+                        Matrix A, double* p, double* Ap)
+{
+
+    /**
+    * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
+    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
+    * Coalesced memory accesses are favoured by exploiting symmetry of A
+    *
+    * @param N Size of the matrix (always assumed square)
+    * @param BLOCK_WIDTH width of the block
+    * @param BLOCK_HEIGHT height of the block
+    * @param A matrix
+    * @param p vector
+    * @param Ap vector for the result of A*p
+    * @return void
+    */
+
+    __shared__ int blockElt;
+    __shared__ int blockxInd;
+    __shared__ int blockyInd;
+
+    if (threadIdx.x == 0) {
+        if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
+            blockElt = BLOCK_WIDTH;
+        else blockElt = N % BLOCK_WIDTH;
+        blockxInd = blockIdx.x * BLOCK_WIDTH;
+        blockyInd = blockIdx.y * NUM_THREADS;
+    }
+
+    __syncthreads();
+
+    // summing variable
+    double cSum = 0.;
+    int threadyInd = blockyInd + threadIdx.x;
+
+    // make sure we are inside the array horizontally
+    if (threadyInd < N) {
+
+        // go through the threads vertically and sum them into a variable
+        for (int i = 0; i < blockElt; i++)
+            cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
+
+        atomicAdd(Ap + threadyInd, cSum);
+    }
+
+}
+
+__global__ void MatVecT(const int N, const int NUM_THREADS, const int BLOCK_WIDTH,
                                 Matrix A, double* p, double* Ap)
 {
 
     /**
     * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
     * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
+    * Coalesced memory accesses are favoured by exploiting symmetry of A
     *
     * @param N Size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block
@@ -112,7 +161,7 @@ __global__ void copy(int N, double* a, double* b)
 
 }
 
-void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
+void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH, const bool T)
 {
 
     /**
@@ -122,6 +171,7 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
     * @param KERNEL_TYPE type of kernel, either naive or efficient
     * @param BLOCK_WIDTH width of the block for CUDA kernels
     * @param NUM_THREADS number of threads per block
+    * @param T true to use transposed kernel for matrix vector products
     * @return void
     */
 
@@ -145,8 +195,15 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
     dim3 block_size(NUM_THREADS);
     dim3 vec_grid_size(ceil(m_n / (double) NUM_THREADS));
     dim3 matvec_grid_size;
-    matvec_grid_size.x = ceil(m_n / (double) NUM_THREADS);
-    matvec_grid_size.y = ceil(m_m / (double) BLOCK_WIDTH);
+    if (T) {
+        matvec_grid_size.x = ceil(m_n / (double) NUM_THREADS);
+        matvec_grid_size.y = ceil(m_m / (double) BLOCK_WIDTH);
+    }
+    else {
+        matvec_grid_size.x = ceil(m_n / (double) BLOCK_WIDTH);
+        matvec_grid_size.y = ceil(m_m / (double) NUM_THREADS);
+    }
+
     
     // initialize cublas handle
     cublasHandle_t h;
@@ -156,7 +213,8 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
     fill<<<vec_grid_size, block_size>>>(m_n,  x, 0.0);
     fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
 
-    MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
+    if (T) MatVecT<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
+    else MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
     cudaDeviceSynchronize();
 
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
@@ -176,7 +234,8 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH)
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
         cudaDeviceSynchronize();
-        MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, p, Ap);
+        if (T) MatVecT<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, p, Ap);
+        else MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, p, Ap);
         cudaDeviceSynchronize();
 
         // alpha = rsold / (p' * Ap);

@@ -7,7 +7,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="98bc9735-9eaf-4348-9b36-946c86f1270a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/code_MPI/cg.run" beforeDir="false" afterPath="$PROJECT_DIR$/code_MPI/cg.run" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.ipynb_checkpoints/plots-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.cu" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg.hh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code_CUDA/cg_main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/slurm-1204823.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/slurm-1204857.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/slurm-1205469.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/slurm-1205484.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code_CUDA/slurm-1205490.out" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,10 +54,23 @@
       <option name="presentableId" value="Default" />
       <updated>1672478685007</updated>
       <workItem from="1672478687846" duration="16000" />
+      <workItem from="1672570595532" duration="7000" />
+      <workItem from="1672570620707" duration="467000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>
