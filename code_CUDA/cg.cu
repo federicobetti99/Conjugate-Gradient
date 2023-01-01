@@ -11,14 +11,13 @@
 const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
-__global__ void MatVecT(const int N, const int NUM_THREADS, const int BLOCK_WIDTH,
+__global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH,
                         Matrix A, double* p, double* Ap)
 {
 
     /**
     * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
-    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
-    * Coalesced memory accesses are favoured by exploiting symmetry of A
+    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done
     *
     * @param N Size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block

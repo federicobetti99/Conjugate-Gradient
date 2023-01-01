@@ -13,10 +13,12 @@ module load gcc cuda openblas
 make
 
 rm ../results/CUDA.txt
+rm ../results/CUDA_T.txt
 
 for NUM_THREADS in 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024; do
   for BLOCK_WIDTH in 2, 4, 8, 16, 32, 64; do
-     srun ./cgsolver lap2D_5pt_n100.mtx $NUM_THREADS $BLOCK_WIDTH ../results/CUDA.txt
+     srun ./cgsolver lap2D_5pt_n100.mtx $NUM_THREADS $BLOCK_WIDTH false ../results/CUDA.txt
+     srun ./cgsolver lap2D_5pt_n100.mtx $NUM_THREADS $BLOCK_WIDTH true ../results/CUDA_T.txt
   done
 done
 
