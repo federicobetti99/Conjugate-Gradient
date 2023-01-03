@@ -12,6 +12,16 @@ using time_point = std::chrono::time_point<clk>;
 
 void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
 {
+    /**
+    * Partition matrix into ranks for MPI interface
+    *
+    * @param N number of rows of the matrix
+    * @param psize number of processors
+    * @param start_rows to be filled with first row of the submatrix of each rank
+    * @param num_rows to be filled with number of rows of the submatrix of each rank
+    * @return void
+    */
+
     if (psize == 1)
     {
         start_rows[0] = 0;
@@ -57,6 +67,7 @@ int main(int argc, char ** argv) {
     int n = solver.n();
     int m = solver.m();
 
+    // possibility of reducing number of iterations for weak scaling experiments
     int maxIter;
     if (argc >= 4) {
         std::stringstream arg_0(argv[3]);
