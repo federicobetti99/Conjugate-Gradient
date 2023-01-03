@@ -6,8 +6,9 @@ project is carried out in the context of the
 MATH-454 Parallel and High Performance Computing course at EPFL.
 
 ## Repository Description
-- `code_CUDA` - Conjugate Gradient CUDA implementation
-- `code_MPI`  - Conjugate Gradient MPI implementation
+- `code` - Conjugate Gradient implementation
+  - `CUDA` - CUDA implementation
+  - `MPI` - MPI implementation
 - `figures` - Figures of the results
 - `results` - Results for weak/strong scaling in MPI, runtime in CUDA
 - `plots.ipynb` - Notebook for reproducibility of the results 
