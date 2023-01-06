@@ -23,8 +23,7 @@ done
 
 # RUN DETAILED ANALYSIS FOR BEST KERNEL
 for NUM_THREADS in 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024; do
-  for BLOCK_WIDTH in 1, 4, 16, 256, 1024; do
+  for BLOCK_WIDTH in 4, 16, 256, 1024; do
      srun ./cgsolver lap2D_5pt_n100.mtx $NUM_THREADS $BLOCK_WIDTH true ../../results/CUDA_T.txt
   done
 done
-
