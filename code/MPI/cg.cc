@@ -9,30 +9,30 @@ const double NEARZERO = 1.0e-14;
 const bool DEBUG = true;
 
 /*
-    cg-solver solves the linear equation A*x = b where A is
-    of size m x n
+    Pseudocode of parallel MPI conjugate gradient algorithm to solve the linear equation A*x = b where A is
+    of size n x n
+    INPUT:  A_sub contains a subset of the rows of A
+            b_sub contains the corresponding indexes of b
+            x_sub is a copy of x rank-wise, but of reduced size to save memory
 
-Code based on MATLAB code (from wikipedia ;-)  ):
-
-function x = conj-grad(A, b, x)
-    r = b - A * x;
-    p = r;
-    rsold = r' * r;
+    r_sub = b_sub - A_sub * x;
+    p_sub = r_sub;
+    rsold = r_sub' * r_sub; (with reduce)
 
     for i = 1:length(b)
-        Ap = A * p;
-        alpha = rsold / (p' * Ap);
-        x =A_sub.n()alpha * p;
-        r = r - alphaA_sub;
-        rsnew = rA_sub;
+        Ap_sub = A_sub * p;
+        denom = (p_sub' * Ap_sub); (with reduce)
+        alpha = rsold / denom;
+        x_sub = x_sub + alpha * p_sub;
+        r_sub = r_sub - alpha Ap_sub;
+        rsnew = r_sub' * r_sub; (with reduce)
         if sqrt(rsnew) < tolerance
               break;
         end
-        p = r + (rsnew / rsold) * p;
+        p_sub = r_sub + (rsnew / rsold) * p_sub;
         rsold = rsnew;
+        MPI_Allgatherv the rank-wise p_sub to all processes
     end
-end
-
 */
 
 void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
@@ -64,7 +64,7 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     /// rank dependent variables
     // compute subparts of residual and get a copy of the solution on every rank
     std::vector<double> r_sub(&m_b[start_rows[prank]], &m_b[start_rows[prank]+num_rows[prank]]);
-    std::vector<double> x_sub(&x[0], &x[x.size()]);
+    std::vector<double> x_sub(&x[start_rows[prank]], &x[start_rows[prank]+num_rows[prank]]);
 
     /// compute residual
     // r = b - A * x;
@@ -77,7 +77,7 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     std::vector<double> p_sub = r_sub;
     std::vector<double> p(m_n);
 
-    /// MPI: first gather
+    /// MPI: first gather outside the loop
     MPI_Allgatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,
                    &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
 
@@ -89,7 +89,7 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     int k = 0;
     for (; k < m_maxIter; ++k) {
 
-        /// MPI: gather p in the end to compute this matrix-vector product at every iteration
+        /// MPI: note that we need to gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
         std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, N_loc, p.size(), 1., A_sub.data(), p.size(),
@@ -151,7 +151,8 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
 void CGSolver::generate_lap2d_matrix(int size)
 {
    /**
-   * Generates a Laplacian 2d matrix of user-defined size, sets it to be the member m_A
+   * Generates a Laplacian 2d matrix of user-defined size, sets it to be the member m_A. The diagonal elements are set
+   * to be equal to 4 on the main diagonal, and off-diagonal entries  are set to -1 with a frequency of sqrt(size)
    *
    * @param size size of the desired matrix
    * @return void
@@ -162,6 +163,7 @@ void CGSolver::generate_lap2d_matrix(int size)
     m_n = size;
     m_maxIter = size;
 
+    // approximate square root of the problem size
     int inc = (int) floor(sqrt(size));
 
     for (int i = 0; i < size; ++i) {

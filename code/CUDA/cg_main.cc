@@ -17,13 +17,13 @@ int main(int argc, char ** argv) {
 
     if (argc < 2) usage(argv[0]);
 
-    /// get number of threads per block
+    /// number of threads per block
     int NUM_THREADS = std::stoi(argv[2]);
 
-    /// get block width for matrix vector product grid
+    /// block width for matrix vector product grid
     int BLOCK_WIDTH = std::stoi(argv[3]);
 
-    /// get type of kernel for matrix vector products
+    /// type of kernel for matrix vector products
     bool T;
     std::string transpose(argv[4]);
     if (transpose == "true") T = true;

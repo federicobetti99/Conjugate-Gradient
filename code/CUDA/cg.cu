@@ -17,7 +17,10 @@ __global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH
 
     /**
     * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
-    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done
+    * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
+    * Coalesced memory accesses are not favoured by using symmetry of A, unlike the kernel MatVecT. In particular, every thread takes care of
+    * BLOCK_WIDTH elements of a row of A, and threads with the same idx in the block are collaborating to the
+    * computation of the corresponding entry of Ap.
     *
     * @param N Size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block
@@ -32,15 +35,11 @@ __global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH
     __shared__ int blockxInd;
     __shared__ int blockyInd;
 
-    if (threadIdx.x == 0) {
-        if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
-            blockElt = BLOCK_WIDTH;
-        else blockElt = N % BLOCK_WIDTH;
-        blockxInd = blockIdx.x * BLOCK_WIDTH;
-        blockyInd = blockIdx.y * NUM_THREADS;
-    }
-
-    __syncthreads();
+    if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
+        blockElt = BLOCK_WIDTH;
+    else blockElt = N % BLOCK_WIDTH;
+    blockxInd = blockIdx.x * BLOCK_WIDTH;
+    blockyInd = blockIdx.y * NUM_THREADS;
 
     // summing variable
     double cSum = 0.;
@@ -65,7 +64,9 @@ __global__ void MatVecT(const int N, const int NUM_THREADS, const int BLOCK_WIDT
     /**
     * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
     * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
-    * Coalesced memory accesses are favoured by exploiting symmetry of A
+    * Coalesced memory accesses are favoured by exploiting symmetry of A. In particular, every thread takes care of
+    * BLOCK_WIDTH elements of a row of A, and threads with the same idx in the block are collaborating to the
+    * computation of the corresponding entry of Ap. This kernel provided overall the best results.
     *
     * @param N Size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block
@@ -76,19 +77,16 @@ __global__ void MatVecT(const int N, const int NUM_THREADS, const int BLOCK_WIDT
     * @return void
     */
 
+    // define common variables to all the elements of the block
     __shared__ int blockElt;
     __shared__ int blockxInd;
     __shared__ int blockyInd;
 
-    if (threadIdx.x == 0) {
-        if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
-            blockElt = BLOCK_WIDTH;
-        else blockElt = N % BLOCK_WIDTH;
-        blockxInd = blockIdx.x * NUM_THREADS;
-        blockyInd = blockIdx.y * BLOCK_WIDTH;
-    }
-
-    __syncthreads();
+    if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
+        blockElt = BLOCK_WIDTH;
+    else blockElt = N % BLOCK_WIDTH;
+    blockxInd = blockIdx.x * NUM_THREADS;
+    blockyInd = blockIdx.y * BLOCK_WIDTH;
 
     // summing variable
     double cSum = 0.;
@@ -167,10 +165,9 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH, co
     * Main function to solve the linear system Ax=b with conjugate gradient
     *
     * @param x initial guess, zero vector usually
-    * @param KERNEL_TYPE type of kernel, either naive or efficient
     * @param BLOCK_WIDTH width of the block for CUDA kernels
     * @param NUM_THREADS number of threads per block
-    * @param T true to use transposed kernel for matrix vector products
+    * @param T true to use transposed kernel for matrix vector products, thus favouring coalesced memory access
     * @return void
     */
 
@@ -193,17 +190,20 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH, co
     // define grid size for linear combination of vectors
     dim3 block_size(NUM_THREADS);
     dim3 vec_grid_size(ceil(m_n / (double) NUM_THREADS));
+
+    // grid size for matrix vector products
     dim3 matvec_grid_size;
     if (T) {
+        // blocks are arranged vertically exploiting symmetry of A
         matvec_grid_size.x = ceil(m_n / (double) NUM_THREADS);
         matvec_grid_size.y = ceil(m_m / (double) BLOCK_WIDTH);
     }
     else {
+        // blocks are arranged horizontally, not exploiting symmetry of A
         matvec_grid_size.x = ceil(m_n / (double) BLOCK_WIDTH);
         matvec_grid_size.y = ceil(m_m / (double) NUM_THREADS);
     }
 
-    
     // initialize cublas handle
     cublasHandle_t h;
     cublasCreate(&h);
@@ -232,10 +232,9 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH, co
 
         // Ap = A * p;
         fill<<<vec_grid_size, block_size>>>(m_n, Ap, 0.0);
-        cudaDeviceSynchronize();
         if (T) MatVecT<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, p, Ap);
         else MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, p, Ap);
-        cudaDeviceSynchronize();
+        cudaDeviceSynchronize();  // synchronize as topology changes between matrix vector products and other operations
 
         // alpha = rsold / (p' * Ap);
         cublasDdot(h, m_n, p, 1, Ap, 1, conj_);
