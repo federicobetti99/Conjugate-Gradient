@@ -12,7 +12,8 @@ module load gcc cuda openblas
 
 make
 
-rm ../results/CUDA.txt
+rm ../results/CUDA_NAIVE.txt
+rm ../results/CUDA_NAIVE_T.txt
 rm ../results/CUDA_T.txt
 
 # RUN COMPARISON OF NAIVE APPROACHES
