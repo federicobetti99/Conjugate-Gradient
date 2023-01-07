@@ -7,7 +7,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38526d11-eea1-4478-8a37-83b87c8e52b5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/code/CUDA/cg.cu" beforeDir="false" afterPath="$PROJECT_DIR$/code/CUDA/cg.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/MPI/cg.run" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.run" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/results/weak_scaling.txt" beforeDir="false" afterPath="$PROJECT_DIR$/results/weak_scaling.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,6 +47,7 @@
       <option name="presentableId" value="Default" />
       <updated>1673091199085</updated>
       <workItem from="1673091201037" duration="72000" />
+      <workItem from="1673092384493" duration="523000" />
     </task>
     <servers />
   </component>
