@@ -96,8 +96,6 @@ int main(int argc, char ** argv) {
     auto t1 = clk::now();
     solver.solve(start_rows, num_rows, x_d);
     second elapsed = clk::now() - t1;
-    second max_time;
-    MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
 
     if (prank == 0) {
