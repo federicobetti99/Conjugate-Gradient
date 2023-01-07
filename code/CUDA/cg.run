@@ -12,17 +12,17 @@ module load gcc cuda openblas
 
 make
 
-rm ../results/CUDA_NAIVE.txt
-rm ../results/CUDA_NAIVE_T.txt
-rm ../results/CUDA_T.txt
+rm ../../results/CUDA_NAIVE.txt
+rm ../../results/CUDA_NAIVE_T.txt
+rm ../../results/CUDA_T.txt
 
-# RUN COMPARISON OF NAIVE APPROACHES
+# RUN COMPARISON OF NAIVE APPROACHES (one thread per row VS one thread per column)
 for NUM_THREADS in 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024; do
     srun ./cgsolver lap2D_5pt_n100.mtx $NUM_THREADS 10000 false ../../results/CUDA_NAIVE.txt
     srun ./cgsolver lap2D_5pt_n100.mtx $NUM_THREADS 10000 true  ../../results/CUDA_NAIVE_T.txt
 done
 
-# RUN DETAILED ANALYSIS FOR BEST KERNEL
+# RUN DETAILED ANALYSIS FOR BEST KERNEL (using coalesced memory access)
 for NUM_THREADS in 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024; do
   for BLOCK_WIDTH in 4, 16, 256, 1024; do
      srun ./cgsolver lap2D_5pt_n100.mtx $NUM_THREADS $BLOCK_WIDTH true ../../results/CUDA_T.txt
