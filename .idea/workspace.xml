@@ -6,10 +6,13 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="38526d11-eea1-4478-8a37-83b87c8e52b5" name="Changes" comment="">
+    <list default="true" id="d323e757-85ff-4367-a419-4ba4db4d42df" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/Conjugate-Gradient-MPI.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/MPI/cg.run" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.run" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/results/weak_scaling.txt" beforeDir="false" afterPath="$PROJECT_DIR$/results/weak_scaling.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/MPI/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/MPI/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.hh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/MPI/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg_main.cc" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,7 +28,7 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="2JzqKc1mH6dbjB1BDrsY0qx12lx" />
+  <component name="ProjectId" id="2K0LE1NvSDnmyvrVcE29QOakyC6" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -41,13 +44,12 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="38526d11-eea1-4478-8a37-83b87c8e52b5" name="Changes" comment="" />
-      <created>1673091199085</created>
+      <changelist id="d323e757-85ff-4367-a419-4ba4db4d42df" name="Changes" comment="" />
+      <created>1673106437270</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1673091199085</updated>
-      <workItem from="1673091201037" duration="72000" />
-      <workItem from="1673092384493" duration="523000" />
+      <updated>1673106437270</updated>
+      <workItem from="1673106439253" duration="82000" />
     </task>
     <servers />
   </component>

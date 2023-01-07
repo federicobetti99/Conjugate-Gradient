@@ -76,12 +76,12 @@ int main(int argc, char ** argv) {
         solver.set_max_iter(maxIter);
     }
 
-    /// MPI: domain decomposition along rows
-    int *start_rows;
-    start_rows = new int [psize];
-    int *num_rows;
-    num_rows = new int [psize];
-    partition_matrix(m, psize, start_rows, num_rows);
+//    /// MPI: domain decomposition along rows
+//    int *start_rows;
+//    start_rows = new int [psize];
+//    int *num_rows;
+//    num_rows = new int [psize];
+//    partition_matrix(m, psize, start_rows, num_rows);
 
     // initialize global source term
     double h = 1. / n;
@@ -94,7 +94,8 @@ int main(int argc, char ** argv) {
     // solve and print statistics
     if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
-    solver.solve(start_rows, num_rows, x_d);
+    // solver.solve(start_rows, num_rows, x_d);
+    solver.solve(x_d);
     second elapsed = clk::now() - t1;
     second max_time;
     MPI_Allreduce(&elapsed, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);

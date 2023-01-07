@@ -26,7 +26,7 @@ public:
     Matrix get_submatrix(Matrix A, int N_loc, int start_m);
 
     /// implements conjugate gradient with MPI interface
-    virtual void solve(int start_rows[], int num_rows[], std::vector<double> & x);
+    virtual void solve(std::vector<double> & x);
 
     /// fix maximum number of iterations for weak scaling experiments
     virtual void set_max_iter(int maxIter);
