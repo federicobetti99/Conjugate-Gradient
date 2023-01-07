@@ -69,9 +69,10 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     MPI_Allgatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, Ap.data(), num_rows, start_rows,
                    MPI_DOUBLE, MPI_COMM_WORLD);
 
+    r = m_b;
     cblas_daxpy(r.size(), -1., Ap.data(), 1, r.data(), 1);
 
-    /// copy p_sub into r_sub and initialize overall p vector
+    /// copy p into r and initialize overall p vector
     p = r;
 
     /// compute residual
@@ -93,13 +94,13 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
         auto alpha = rsold / std::max(cblas_ddot(p.size(), p.data(), 1, Ap.data(), 1), rsold * NEARZERO);
 
         // x = x + alpha * p;
-        cblas_daxpy(x.size(), alpha, p.data(), 1, x.data(), 1);
+        cblas_daxpy(m_n, alpha, p.data(), 1, x.data(), 1);
 
         // r = r - alpha * Ap;
-        cblas_daxpy(r.size(), -alpha, Ap.data(), 1, r.data(), 1);
+        cblas_daxpy(m_n, -alpha, Ap.data(), 1, r.data(), 1);
 
         // rsnew = r' * r;
-        auto rsnew = cblas_ddot(r.size(), r.data(), 1, r.data(), 1);
+        auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
 
         // check convergence with overall residual, not rank-wise
         if (std::sqrt(rsnew) < m_tolerance)
@@ -110,7 +111,7 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
 
         // p = r + (rsnew / rsold) * p;
         tmp = r;
-        cblas_daxpy(p.size(), beta, p.data(), 1, tmp.data(), 1);
+        cblas_daxpy(m_n, beta, p.data(), 1, tmp.data(), 1);
         p = tmp;
 
         // rsold = rsnew;
