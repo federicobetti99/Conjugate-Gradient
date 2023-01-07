@@ -94,8 +94,7 @@ int main(int argc, char ** argv) {
     // solve and print statistics
     if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
-    if (psize == 1) solver.serial_solve(x_d);
-    else solver.solve(start_rows, num_rows, x_d);
+    solver.solve(start_rows, num_rows, x_d);
     second elapsed = clk::now() - t1;
     if (prank == 0) std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 

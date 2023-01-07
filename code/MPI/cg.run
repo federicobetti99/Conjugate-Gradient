@@ -12,7 +12,7 @@ rm ../../results/strong_scaling.txt
 rm ../../results/weak_scaling.txt
 
 #STRONG SCALING                                                                                                                                    
-for N in 1024 2048 4096 8192; do
+for N in 1024 2048 4096 8192 16384; do
    for psize in 1 2 4 8 16 32 64; do
        srun -n $psize ./cgsolver $N ../../results/strong_scaling.txt
    done

@@ -26,7 +26,7 @@ public:
     Matrix get_submatrix(Matrix A, int N_loc, int start_m);
 
     /// implements serial CG solver
-    virtual void solve(std::vector<double> & x);
+    virtual void serial_solve(std::vector<double> & x);
 
     /// implements conjugate gradient with MPI interface
     virtual void solve(int start_rows[], int num_rows[], std::vector<double> & x);

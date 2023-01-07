@@ -76,8 +76,6 @@ void CGSolver::serial_solve(std::vector<double> & x) {
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
 
-        // if sqrt(rsnew) < 1e-10
-        //   break;
         if (std::sqrt(rsnew) < m_tolerance)
             break; // Convergence test
 
@@ -89,10 +87,6 @@ void CGSolver::serial_solve(std::vector<double> & x) {
 
         // rsold = rsnew;
         rsold = rsnew;
-        if (DEBUG) {
-            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::flush;
-        }
     }
 
     if (DEBUG) {
