@@ -18,9 +18,9 @@ __global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH
     /**
     * Efficient kernel for matrix vector product, every thread takes care of the dot product between a subpart of a
     * row of A and the corresponding subpart of p, then atomicAdd from the same thread in every block is done.
-    * Coalesced memory accesses are not favoured by using symmetry of A, unlike the kernel MatVecT. In particular, every thread takes care of
-    * BLOCK_WIDTH elements of a row of A, and threads with the same idx in the block are collaborating to the
-    * computation of the corresponding entry of Ap.
+    * Coalesced memory accesses are not favoured by using symmetry of A, unlike the kernel MatVecT. In particular,
+    * every thread takes care of BLOCK_WIDTH elements of a row of A, and threads with the same idx in the block
+    * are collaborating to the computation of the corresponding entry of Ap.
     *
     * @param N Size of the matrix (always assumed square)
     * @param BLOCK_WIDTH width of the block
@@ -275,10 +275,12 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH, co
        cudaMallocManaged(&r, m_n * sizeof(double));
        fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);  
        if (T) MatVecT<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
-       else MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);                                                                     cudaDeviceSynchronize();
+       else MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
+       cudaDeviceSynchronize();
        copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
        sumVec<<<vec_grid_size, block_size>>>(m_n, 1.0, r, -1.0, Ap);
-       cublasDdot(h, m_n, r, 1, r, 1, rsnew_);                                                                                                                       cudaMemcpy(&rsnew, rsnew_, sizeof(double), cudaMemcpyDeviceToHost);
+       cublasDdot(h, m_n, r, 1, r, 1, rsnew_);
+       cudaMemcpy(&rsnew, rsnew_, sizeof(double), cudaMemcpyDeviceToHost);
        cublasDdot(h, m_n, x, 1, x, 1, nx_);
        cudaMemcpy(&nx, nx_, sizeof(double), cudaMemcpyDeviceToHost);
        cublasDdot(h, m_n, m_b, 1, m_b, 1, nb_);
