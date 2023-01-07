@@ -7,12 +7,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d323e757-85ff-4367-a419-4ba4db4d42df" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/Conjugate-Gradient-MPI.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/code/MPI/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/MPI/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.hh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/MPI/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg_main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plots.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/plots.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/results/strong_scaling.txt" beforeDir="false" afterPath="$PROJECT_DIR$/results/strong_scaling.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,11 +27,15 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="2K0LE1NvSDnmyvrVcE29QOakyC6" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
@@ -50,10 +52,26 @@
       <option name="presentableId" value="Default" />
       <updated>1673106437270</updated>
       <workItem from="1673106439253" duration="82000" />
+      <workItem from="1673108310926" duration="538000" />
+      <workItem from="1673108877579" duration="59000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
 </project>
