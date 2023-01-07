@@ -83,13 +83,13 @@ void CGSolver::solve(std::vector<double> & x)
     p = r;
 
     /// compute residual
-    auto rsold = cblas_ddot(r.size(), r.data(), 1, r.data(), 1);
+    auto rsold = cblas_ddot(r.size(), r.data(), 1, p.data(), 1);
 
     // for i = 1:length(b)
     int k = 0;
     for (; k < m_maxIter; ++k) {
 
-        /// MPI: note that we need to gather p in the end to compute this matrix-vector product at every iteration
+        /// MPI: we need to gather Ap to compute the step size alpha at every iteration
         // Ap = A * p;
         std::fill_n(Ap.begin(), Ap.size(), 0.);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,

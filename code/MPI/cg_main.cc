@@ -11,7 +11,8 @@ using time_point = std::chrono::time_point<clk>;
 
 
 int main(int argc, char ** argv) {
-    MPI_Init(&argc, &argv);
+    int provided;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
 
     /// MPI: Initialize and get rank
     int prank, psize;
@@ -50,11 +51,9 @@ int main(int argc, char ** argv) {
     std::fill(x_d.begin(), x_d.end(), 0.);
 
     // solve and print statistics
-    if (prank == 0) std::cout << "Call CG dense on matrix size (" << m << " x " << n << ")" << std::endl;
     auto t1 = clk::now();
     solver.solve(x_d);
     second elapsed = clk::now() - t1;
-    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
     if (prank == 0) {
         // save results to file
