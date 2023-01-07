@@ -70,7 +70,7 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     /// compute residual
     // r = b - A * x;
     std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, num_rows[prank], m_n, 1., m_A.data()+start_rows[prank], m_n,
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,
                 x.data(), 1, 0., Ap_sub.data(), 1);
     cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
@@ -93,7 +93,7 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
         /// MPI: note that we need to gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
         std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data()+start_rows[prank], m_n,
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,
                     p.data(), 1, 0., Ap_sub.data(), 1);
 
         /// MPI: compute denominator for optimal step size rank-wise and reduce in-place
@@ -138,7 +138,7 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     }
 
     /// MPI: construct the solution from x_sub to x by stacking together the x_sub in precise order
-    MPI_Gatherv(&x_sub.front(), num_rows[prank], MPI_DOUBLE,
+    MPI_Gatherv(&x_sub.front(), count_rows, MPI_DOUBLE,
 		&x.front(), num_rows, start_rows, MPI_DOUBLE,
 		0, MPI_COMM_WORLD);
 
@@ -154,137 +154,6 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
 	 << std::sqrt(rsold) << ", ||x|| = " << nx  << ", ||Ax - b||/||b|| = " << res << std::endl;
     }
 
-}
-
-int CGSolver::solve(std::vector<double> & x) {
-    std::vector<double> r(m_n);
-    std::vector<double> p(m_n);
-    std::vector<double> Ap(m_n);
-    std::vector<double> tmp(m_n);
-
-    // MPI parameter computation!
-    int prank, psize;
-    MPI_Comm_rank(MPI_COMM_WORLD, &prank);
-    MPI_Comm_size(MPI_COMM_WORLD, &psize);
-
-    // Evenly distribute workload across processes even in "unlucky" cases
-    std::vector<int> counts(psize, m_n/psize);
-    for (int i = 0; i < m_n%psize; ++i) {
-        counts[i]++;
-    }
-    std::vector<int> displacements(psize+1);
-    for (int i = 0; i < psize; ++i) {
-        displacements[i+1] = displacements[i] + counts[i];
-    }
-    int row_start = displacements[prank];
-    int row_end = displacements[prank+1];
-
-    second total_mult_duration = second::zero();
-
-    // Define a helper for matrix-vector products
-    auto multiply_mat_vector = [&] (const std::vector<double> & input, std::vector<double> & output) {
-        auto t1 = clk::now();
-
-        // multiply our submatrix
-        cblas_dgemv(
-                CblasRowMajor,
-                CblasNoTrans,
-                row_end - row_start,
-                m_n,
-                1.,
-                // adjust matrix pointer for row_start
-                m_A.data() + row_start * m_n,
-                // "real" dimension of the matrix
-                m_n,
-                input.data(),
-                1,
-                0.,
-                output.data() + row_start,
-                1);
-
-        // all gather to share the results! :)
-        MPI_Allgatherv(
-                // send
-                MPI_IN_PLACE,
-                // ignored params for send
-                -1, MPI_DOUBLE,
-                // recv buffer
-                output.data(),
-                // counts, displacements
-                counts.data(), displacements.data(),
-                MPI_DOUBLE,
-                MPI_COMM_WORLD);
-
-        auto t2 = clk::now();
-        total_mult_duration += t2 - t1;
-    };
-
-    // r = b - A * x;
-    multiply_mat_vector(x, Ap);
-
-    r = m_b;
-    cblas_daxpy(m_n, -1., Ap.data(), 1, r.data(), 1);
-
-    // p = r;
-    p = r;
-
-    // rsold = r' * r;
-    auto rsold = cblas_ddot(m_n, r.data(), 1, p.data(), 1);
-
-    // for i = 1:length(b)
-    int k = 0;
-    for (; k < m_n; ++k) {
-        // Ap = A * p;
-        multiply_mat_vector(p, Ap);
-
-        // alpha = rsold / (p' * Ap);
-        auto alpha = rsold / std::max(cblas_ddot(m_n, p.data(), 1, Ap.data(), 1),
-                                      rsold * NEARZERO);
-
-        // x = x + alpha * p;
-        cblas_daxpy(m_n, alpha, p.data(), 1, x.data(), 1);
-
-        // r = r - alpha * Ap;
-        cblas_daxpy(m_n, -alpha, Ap.data(), 1, r.data(), 1);
-
-        // rsnew = r' * r;
-        auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
-
-        // if sqrt(rsnew) < 1e-10
-        //   break;
-        if (std::sqrt(rsnew) < m_tolerance)
-            break; // Convergence test
-
-        auto beta = rsnew / rsold;
-        // p = r + (rsnew / rsold) * p;
-        tmp = r;
-        cblas_daxpy(m_n, beta, p.data(), 1, tmp.data(), 1);
-        p = tmp;
-
-        // rsold = rsnew;
-        rsold = rsnew;
-        if (DEBUG) {
-            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << "\r" << std::flush;
-        }
-    }
-
-    if (DEBUG) {
-        multiply_mat_vector(x, r);
-        cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
-        auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
-                   std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
-        auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << nx
-                  << ", ||Ax - b||/||b|| = " << res << std::endl;
-    }
-
-    if (DEBUG) {
-        std::cout << "mul duration = " << total_mult_duration.count() << std::endl;
-    }
-
-    return std::min(m_n, k+1); // return number of steps
 }
 
 
