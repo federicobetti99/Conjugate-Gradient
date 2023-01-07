@@ -35,75 +35,7 @@ const bool DEBUG = true;
     end
 */
 
-void CGSolver::serial_solve(std::vector<double> & x) {
-    std::vector<double> r(m_n);
-    std::vector<double> p(m_n);
-    std::vector<double> Ap(m_n);
-    std::vector<double> tmp(m_n);
-
-    // r = b - A * x;
-    std::fill_n(Ap.begin(), Ap.size(), 0.);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                x.data(), 1, 0., Ap.data(), 1);
-
-    r = m_b;
-    cblas_daxpy(m_n, -1., Ap.data(), 1, r.data(), 1);
-
-    // p = r;
-    p = r;
-
-    // rsold = r' * r;
-    auto rsold = cblas_ddot(m_n, r.data(), 1, p.data(), 1);
-
-    // for i = 1:length(b)
-    int k = 0;
-    for (; k < m_n; ++k) {
-        // Ap = A * p;
-        std::fill_n(Ap.begin(), Ap.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                    p.data(), 1, 0., Ap.data(), 1);
-
-        // alpha = rsold / (p' * Ap);
-        auto alpha = rsold / std::max(cblas_ddot(m_n, p.data(), 1, Ap.data(), 1),
-                                      rsold * NEARZERO);
-
-        // x = x + alpha * p;
-        cblas_daxpy(m_n, alpha, p.data(), 1, x.data(), 1);
-
-        // r = r - alpha * Ap;
-        cblas_daxpy(m_n, -alpha, Ap.data(), 1, r.data(), 1);
-
-        // rsnew = r' * r;
-        auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
-
-        if (std::sqrt(rsnew) < m_tolerance)
-            break; // Convergence test
-
-        auto beta = rsnew / rsold;
-        // p = r + (rsnew / rsold) * p;
-        tmp = r;
-        cblas_daxpy(m_n, beta, p.data(), 1, tmp.data(), 1);
-        p = tmp;
-
-        // rsold = rsnew;
-        rsold = rsnew;
-    }
-
-    if (DEBUG) {
-        std::fill_n(r.begin(), r.size(), 0.);
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
-                    x.data(), 1, 0., r.data(), 1);
-        cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
-        auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
-                   std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
-        auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
-        std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                  << std::sqrt(rsold) << ", ||x|| = " << nx
-                  << ", ||Ax - b||/||b|| = " << res << std::endl;
-    }
-}
-
-void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
+void CGSolver::solve(std::vector<double> & x)
 {
     /**
     * Solve the linear system Ax = b with conjugate gradient and MPI interface
@@ -123,6 +55,13 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     std::vector<double> r(m_n);
     std::vector<double> Ap(m_n);
     std::vector<double> p(m_n);
+
+    /// MPI: domain decomposition along rows
+    int *start_rows;
+    start_rows = new int [psize];
+    int *num_rows;
+    num_rows = new int [psize];
+    partition_matrix(m_m, psize, start_rows, num_rows);
 
     /// rank dependent variables
     // compute subpart of the rows of the matrix destined to prank
@@ -301,3 +240,38 @@ void CGSolver::init_source_term(double h)
     }
 
 }
+
+void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
+{
+    /**
+    * Partition matrix into ranks for MPI interface
+    *
+    * @param N number of rows of the matrix
+    * @param psize number of processors
+    * @param start_rows to be filled with first row of the submatrix of each rank
+    * @param num_rows to be filled with number of rows of the submatrix of each rank
+    * @return void
+    */
+
+    if (psize == 1)
+    {
+        start_rows[0] = 0;
+        num_rows[0] = N;
+    }
+    else
+    {
+        int N_loc = N / psize;
+        start_rows[0] = 0;
+        num_rows[0] = N_loc;
+        int i0 = N_loc;
+        for(int prank = 1; prank < psize-1; prank++)
+        {
+            start_rows[prank] = i0;
+            num_rows[prank] = N_loc;
+            i0 += N_loc;
+        }
+        start_rows[psize-1] = i0;
+        num_rows[psize-1] = N - i0;
+    }
+}
+

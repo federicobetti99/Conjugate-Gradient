@@ -19,17 +19,17 @@ public:
     /// initialize source term
     void init_source_term(double h);
 
+    /// partition matrix
+    virtual void partition_matrix(int N, int psize, int start_rows[], int num_rows[]);
+
     /// generate Laplacian 2d matrix for weak scaling and strong scaling experiment
     virtual void generate_lap2d_matrix(int size);
    
     /// get submatrix for parallel computation
     Matrix get_submatrix(Matrix A, int N_loc, int start_m);
 
-    /// implements serial CG solver
-    virtual void serial_solve(std::vector<double> & x);
-
     /// implements conjugate gradient with MPI interface
-    virtual void solve(int start_rows[], int num_rows[], std::vector<double> & x);
+    virtual void solve(std::vector<double> & x);
 
     /// fix maximum number of iterations for weak scaling experiments
     virtual void set_max_iter(int maxIter);

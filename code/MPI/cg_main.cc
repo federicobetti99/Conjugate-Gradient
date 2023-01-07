@@ -10,41 +10,6 @@ using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
 
-void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
-{
-    /**
-    * Partition matrix into ranks for MPI interface
-    *
-    * @param N number of rows of the matrix
-    * @param psize number of processors
-    * @param start_rows to be filled with first row of the submatrix of each rank
-    * @param num_rows to be filled with number of rows of the submatrix of each rank
-    * @return void
-    */
-
-    if (psize == 1)
-    {
-        start_rows[0] = 0;
-        num_rows[0] = N;
-    }
-    else
-    {
-        int N_loc = N / psize;
-        start_rows[0] = 0;
-        num_rows[0] = N_loc;
-        int i0 = N_loc;
-        for(int prank = 1; prank < psize-1; prank++)
-        {
-            start_rows[prank] = i0;
-            num_rows[prank] = N_loc;
-            i0 += N_loc;
-        }
-        start_rows[psize-1] = i0;
-        num_rows[psize-1] = N - i0;    
-    }
-}
-
-
 int main(int argc, char ** argv) {
     MPI_Init(&argc, &argv);
 
@@ -75,13 +40,6 @@ int main(int argc, char ** argv) {
         arg_0 >> maxIter;
         solver.set_max_iter(maxIter);
     }
-
-    /// MPI: domain decomposition along rows
-    int *start_rows;
-    start_rows = new int [psize];
-    int *num_rows;
-    num_rows = new int [psize];
-    partition_matrix(m, psize, start_rows, num_rows);
 
     // initialize global source term
     double h = 1. / n;

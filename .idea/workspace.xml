@@ -7,8 +7,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d323e757-85ff-4367-a419-4ba4db4d42df" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.ipynb_checkpoints/plots-checkpoint.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.ipynb_checkpoints/plots-checkpoint.ipynb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/code/MPI/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.cc" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/code/MPI/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.hh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/code/MPI/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg_main.cc" afterDir="false" />
@@ -58,6 +58,8 @@
       <workItem from="1673108310926" duration="538000" />
       <workItem from="1673108877579" duration="59000" />
       <workItem from="1673110243044" duration="70000" />
+      <workItem from="1673110845474" duration="3000" />
+      <workItem from="1673113939315" duration="224000" />
     </task>
     <servers />
   </component>
