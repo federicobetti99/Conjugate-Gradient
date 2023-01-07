@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=2
 #SBATCH --account=math-454
+#SBATCH --reservation=Course-math-454-final
 
 module purge
 module load gcc openblas
@@ -8,8 +9,8 @@ module load mvapich2
 
 make
 
-rm ../results/strong_scaling.txt
-rm ../results/weak_scaling.txt
+rm ../../results/strong_scaling.txt
+rm ../../results/weak_scaling.txt
 
 # STRONG SCALING EXPERIMENTS
 for N in 1024 2048 4096 8192 16384; do
@@ -19,7 +20,7 @@ for N in 1024 2048 4096 8192 16384; do
   srun -n 8 ./cgsolver  $N ../../results/strong_scaling.txt
   srun -n 16 ./cgsolver $N ../../results/strong_scaling.txt
   srun -n 32 ./cgsolver $N ../../results/strong_scaling.txt
-  srun -n 64 ./cgsolver $N ../../results/strong_scaling.txt
+  srun -n 56 ./cgsolver $N ../../results/strong_scaling.txt
 done
 
 # WEAK SCALING EXPERIMENTS
@@ -29,4 +30,4 @@ srun -n 4 ./cgsolver 4096   ../../results/weak_scaling.txt 200
 srun -n 8 ./cgsolver 5792   ../../results/weak_scaling.txt 200
 srun -n 16 ./cgsolver 8192  ../../results/weak_scaling.txt 200
 srun -n 32 ./cgsolver 11585 ../../results/weak_scaling.txt 200
-srun -n 64 ./cgsolver 16384 ../../results/weak_scaling.txt 200
+srun -n 56 ./cgsolver 15325 ../../results/weak_scaling.txt 200
