@@ -241,7 +241,7 @@ void CGSolver::init_source_term(double h)
 
 }
 
-void partition_matrix(int N, int psize, int start_rows[], int num_rows[])
+void CGSolver::partition_matrix(int N, int psize, int start_rows[], int num_rows[])
 {
     /**
     * Partition matrix into ranks for MPI interface

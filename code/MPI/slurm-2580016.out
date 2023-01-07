@@ -1,169 +1,170 @@
 make: Nothing to be done for 'all'.
+rm: cannot remove '../../results/weak_scaling.txt': No such file or directory
 srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
 Call CG dense on matrix size (1024 x 1024)
 	[STEP 176] residual = 1.180305e-10, ||x|| = 1.544235e+07, ||Ax - b||/||b|| = 2.013257e-13
-Time for CG (dense solver)  = 5.873032e-02 [s]
+Time for CG (dense solver)  = 5.892452e-02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (1024 x 1024)
 	[STEP 176] residual = 1.180305e-10, ||x|| = 1.544235e+07, ||Ax - b||/||b|| = 2.013257e-13
-Time for CG (dense solver)  = 3.133841e-02 [s]
+Time for CG (dense solver)  = 3.196965e-02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (1024 x 1024)
 	[STEP 176] residual = 1.180305e-10, ||x|| = 1.544235e+07, ||Ax - b||/||b|| = 2.013257e-13
-Time for CG (dense solver)  = 1.662751e-02 [s]
+Time for CG (dense solver)  = 1.648737e-02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (1024 x 1024)
 	[STEP 176] residual = 1.180305e-10, ||x|| = 1.544235e+07, ||Ax - b||/||b|| = 2.013257e-13
-Time for CG (dense solver)  = 7.647782e-03 [s]
+Time for CG (dense solver)  = 7.590990e-03 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (1024 x 1024)
 	[STEP 176] residual = 1.180305e-10, ||x|| = 1.544235e+07, ||Ax - b||/||b|| = 2.013257e-13
-Time for CG (dense solver)  = 5.389808e-03 [s]
+Time for CG (dense solver)  = 5.275998e-03 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (1024 x 1024)
 	[STEP 176] residual = 1.180305e-10, ||x|| = 1.544235e+07, ||Ax - b||/||b|| = 2.013257e-13
-Time for CG (dense solver)  = 5.583280e-03 [s]
+Time for CG (dense solver)  = 5.576863e-03 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (1024 x 1024)
 	[STEP 176] residual = 1.180305e-10, ||x|| = 1.544235e+07, ||Ax - b||/||b|| = 2.013257e-13
-Time for CG (dense solver)  = 8.896382e-03 [s]
+Time for CG (dense solver)  = 8.950248e-03 [s]
 srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 251] residual = 1.059765e-10, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 4.686025e-13
-Time for CG (dense solver)  = 4.667158e-01 [s]
+Time for CG (dense solver)  = 4.673050e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 251] residual = 1.059765e-10, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 4.686025e-13
-Time for CG (dense solver)  = 1.732714e-01 [s]
+Time for CG (dense solver)  = 1.812481e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 251] residual = 1.059765e-10, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 4.686025e-13
-Time for CG (dense solver)  = 8.756904e-02 [s]
+Time for CG (dense solver)  = 8.690102e-02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 251] residual = 1.059765e-10, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 4.686025e-13
-Time for CG (dense solver)  = 5.090797e-02 [s]
+Time for CG (dense solver)  = 4.980051e-02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 251] residual = 1.059765e-10, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 4.686025e-13
-Time for CG (dense solver)  = 3.127216e-02 [s]
+Time for CG (dense solver)  = 3.288077e-02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 251] residual = 1.059765e-10, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 4.686025e-13
-Time for CG (dense solver)  = 2.022240e-02 [s]
+Time for CG (dense solver)  = 2.099423e-02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 251] residual = 1.059765e-10, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 4.686025e-13
-Time for CG (dense solver)  = 2.141908e-02 [s]
+Time for CG (dense solver)  = 2.134366e-02 [s]
 srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 385] residual = 1.031830e-10, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 1.040451e-12
-Time for CG (dense solver)  = 3.561144e+00 [s]
+Time for CG (dense solver)  = 3.605144e+00 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 385] residual = 1.031830e-10, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 1.040451e-12
-Time for CG (dense solver)  = 1.726861e+00 [s]
+Time for CG (dense solver)  = 1.713197e+00 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 385] residual = 1.031830e-10, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 1.040451e-12
-Time for CG (dense solver)  = 7.374645e-01 [s]
+Time for CG (dense solver)  = 7.684336e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 385] residual = 1.031830e-10, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 1.040451e-12
-Time for CG (dense solver)  = 4.188956e-01 [s]
+Time for CG (dense solver)  = 3.974864e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 385] residual = 1.031830e-10, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 1.040451e-12
-Time for CG (dense solver)  = 2.423150e-01 [s]
+Time for CG (dense solver)  = 2.380184e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 385] residual = 1.031830e-10, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 1.040451e-12
-Time for CG (dense solver)  = 1.502606e-01 [s]
+Time for CG (dense solver)  = 1.529661e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 385] residual = 1.031830e-10, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 1.040451e-12
-Time for CG (dense solver)  = 1.952961e-01 [s]
+Time for CG (dense solver)  = 1.927240e-01 [s]
 srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 530] residual = 1.052027e-10, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 2.468731e-12
-Time for CG (dense solver)  = 2.024581e+01 [s]
+Time for CG (dense solver)  = 2.083769e+01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 530] residual = 1.052027e-10, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 2.468731e-12
-Time for CG (dense solver)  = 1.027272e+01 [s]
+Time for CG (dense solver)  = 1.017426e+01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 530] residual = 1.052027e-10, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 2.468731e-12
-Time for CG (dense solver)  = 5.220130e+00 [s]
+Time for CG (dense solver)  = 5.084347e+00 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 530] residual = 1.052027e-10, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 2.468731e-12
-Time for CG (dense solver)  = 2.659534e+00 [s]
+Time for CG (dense solver)  = 2.673537e+00 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 530] residual = 1.052027e-10, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 2.468731e-12
-Time for CG (dense solver)  = 1.675155e+00 [s]
+Time for CG (dense solver)  = 1.462920e+00 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 530] residual = 1.052027e-10, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 2.468731e-12
-Time for CG (dense solver)  = 9.269679e-01 [s]
+Time for CG (dense solver)  = 9.493833e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 530] residual = 1.052027e-10, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 2.468731e-12
-Time for CG (dense solver)  = 9.672467e-01 [s]
+Time for CG (dense solver)  = 9.408465e-01 [s]
 srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 780] residual = 1.024436e-10, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 5.882628e-12
-Time for CG (dense solver)  = 1.194616e+02 [s]
+Time for CG (dense solver)  = 1.188043e+02 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 780] residual = 1.024436e-10, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 5.882628e-12
-Time for CG (dense solver)  = 6.020285e+01 [s]
+Time for CG (dense solver)  = 6.012590e+01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 780] residual = 1.024436e-10, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 5.882628e-12
-Time for CG (dense solver)  = 3.026855e+01 [s]
+Time for CG (dense solver)  = 3.014147e+01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 780] residual = 1.024436e-10, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 5.882628e-12
-Time for CG (dense solver)  = 1.576840e+01 [s]
+Time for CG (dense solver)  = 1.555038e+01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 780] residual = 1.024436e-10, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 5.882628e-12
-Time for CG (dense solver)  = 8.829511e+00 [s]
+Time for CG (dense solver)  = 9.083864e+00 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 780] residual = 1.024436e-10, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 5.882628e-12
-Time for CG (dense solver)  = 5.293284e+00 [s]
+Time for CG (dense solver)  = 5.296517e+00 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 780] residual = 1.024436e-10, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 5.882628e-12
-Time for CG (dense solver)  = 5.167931e+00 [s]
+Time for CG (dense solver)  = 5.192862e+00 [s]
 srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
 Call CG dense on matrix size (2048 x 2048)
 	[STEP 200] residual = 1.331819e-05, ||x|| = 8.808702e+07, ||Ax - b||/||b|| = 2.062079e-11
-Time for CG (dense solver)  = 3.682132e-01 [s]
+Time for CG (dense solver)  = 3.642214e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (2896 x 2896)
 	[STEP 200] residual = 3.283909e-03, ||x|| = 2.131358e+08, ||Ax - b||/||b|| = 3.022202e-09
-Time for CG (dense solver)  = 3.757009e-01 [s]
+Time for CG (dense solver)  = 3.862127e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (4096 x 4096)
 	[STEP 200] residual = 8.851701e-02, ||x|| = 4.919699e+08, ||Ax - b||/||b|| = 4.843007e-08
-Time for CG (dense solver)  = 3.822315e-01 [s]
+Time for CG (dense solver)  = 3.940519e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (5792 x 5792)
 	[STEP 200] residual = 2.301992e+01, ||x|| = 1.171934e+09, ||Ax - b||/||b|| = 7.490127e-06
-Time for CG (dense solver)  = 4.815736e-01 [s]
+Time for CG (dense solver)  = 4.891477e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (8192 x 8192)
 	[STEP 200] residual = 6.342716e+02, ||x|| = 2.809266e+09, ||Ax - b||/||b|| = 1.226927e-04
-Time for CG (dense solver)  = 5.744732e-01 [s]
+Time for CG (dense solver)  = 5.663933e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (11585 x 11585)
 	[STEP 200] residual = 4.241592e+03, ||x|| = 6.680437e+09, ||Ax - b||/||b|| = 4.878800e-04
-Time for CG (dense solver)  = 7.522301e-01 [s]
+Time for CG (dense solver)  = 7.606591e-01 [s]
 Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
 Call CG dense on matrix size (16384 x 16384)
 	[STEP 200] residual = 2.863254e+04, ||x|| = 1.569775e+10, ||Ax - b||/||b|| = 1.958205e-03
-Time for CG (dense solver)  = 1.464488e+00 [s]
+Time for CG (dense solver)  = 1.560288e+00 [s]
