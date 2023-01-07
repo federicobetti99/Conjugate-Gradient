@@ -96,7 +96,7 @@ int main(int argc, char ** argv) {
     auto t1 = clk::now();
     solver.solve(start_rows, num_rows, x_d);
     second elapsed = clk::now() - t1;
-    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << max_time.count() << " [s]\n";
+    if (prank == 0) std::cout << "Time for CG (dense solver)  = " << elapsed.count() << " [s]\n";
 
     if (prank == 0) {
         // save results to file

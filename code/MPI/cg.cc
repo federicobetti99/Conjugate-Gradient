@@ -63,10 +63,10 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
 
     /// compute residual
     // r = b - A * x;
-    std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
+    std::fill_n(Ap.begin(), Ap.size(), 0.);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,
-                x.data(), 1, 0., Ap.data() + start_rows, 1);
-    MPI_Allgatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, Ap.data(), counts.data(), displacements.data(),
+                x.data(), 1, 0., Ap.data() + start_row, 1);
+    MPI_Allgatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, Ap.data(), num_rows, start_rows,
                    MPI_DOUBLE, MPI_COMM_WORLD);
 
     cblas_daxpy(r.size(), -1., Ap.data(), 1, r.data(), 1);
@@ -83,10 +83,10 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
 
         /// MPI: note that we need to gather p in the end to compute this matrix-vector product at every iteration
         // Ap = A * p;
-        std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
+        std::fill_n(Ap.begin(), Ap.size(), 0.);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,
-                    p.data(), 1, 0., Ap.data() + start_rows, 1);
-        MPI_Allgatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, Ap.data(), counts.data(), displacements.data(),
+                    p.data(), 1, 0., Ap.data() + start_row, 1);
+        MPI_Allgatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, Ap.data(), num_rows, start_rows,
                        MPI_DOUBLE, MPI_COMM_WORLD);
 
         // alpha = rsold / (p' * Ap);
