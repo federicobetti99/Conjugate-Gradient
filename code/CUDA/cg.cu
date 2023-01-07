@@ -262,7 +262,29 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH, co
 
         // prepare next iteration and print statistics
         rsold = rsnew;
-        if (DEBUG) std::cout << "\t[STEP " << k << "] residual = " << std::scientific << std::sqrt(rsold) << std::endl;
+    }
+
+    if (DEBUG) {
+       double* r;
+       double nx;
+       double* nx_;
+       double nb;
+       double* nb_;
+       cudaMallocManaged(&nb_, sizeof(double));
+       cudaMallocManaged(&nx_, sizeof(double));
+       cudaMallocManaged(&r, m_n * sizeof(double));
+       fill<<<vec_grid_size, block_size>>>(m_n, r, 0.0);  
+       if (T) MatVecT<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);                                                                  else MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);                                                                     cudaDeviceSynchronize(); 
+       copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
+       sumVec<<<vec_grid_size, block_size>>>(m_n, 1.0, r, -1.0, Ap);
+       cublasDdot(h, m_n, r, 1, r, 1, rsnew_);                                                                                                                       cudaMemcpy(&rsnew, rsnew_, sizeof(double), cudaMemcpyDeviceToHost);
+       cublasDdot(h, m_n, x, 1, x, 1, nx_);
+       cudaMemcpy(&nx, nx_, sizeof(double), cudaMemcpyDeviceToHost);
+       cublasDdot(h, m_n, m_b, 1, m_b, 1, nb_);
+       cudaMemcpy(&nb, nb_, sizeof(double), cudaMemcpyDeviceToHost);         
+       std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+              << std::sqrt(rsold) << ", ||x|| = " << std::sqrt(nx)
+              << ", ||Ax - b||/||b|| = " << std::sqrt(rsnew) / std::sqrt(nb) << std::endl;
     }
 
     cudaFree(&r);

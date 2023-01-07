@@ -50,6 +50,9 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
     MPI_Comm_size(MPI_COMM_WORLD, &psize);
 
+    // define final residual
+    std::vector<double> r(m_n);
+
     /// rank dependent variables
     // compute subpart of the matrix destined to prank
     Matrix A_sub;
@@ -134,17 +137,24 @@ void CGSolver::solve(int start_rows[], int num_rows[], std::vector<double> & x)
         /// MPI collective communication: gather p_sub in a global vector p from all ranks to all ranks
         MPI_Allgatherv(&p_sub.front(), num_rows[prank], MPI_DOUBLE,
 		       &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
-
-        if (DEBUG && prank == 0) {
-            std::cout << "\t[STEP " << k << "] residual = " << std::scientific
-                      << std::sqrt(rsold) << std::endl;
-        }
     }
 
     /// MPI: construct the solution from x_sub to x by stacking together the x_sub in precise order
     MPI_Gatherv(&x_sub.front(), num_rows[prank], MPI_DOUBLE,
 		&x.front(), num_rows, start_rows, MPI_DOUBLE,
 		0, MPI_COMM_WORLD);
+
+    if (DEBUG && prank == 0) {
+	 std::fill_n(r.begin(), r.size(), 0.);
+	 cblas_dgemv(CblasRowMajor, CblasNoTrans, m_m, m_n, 1., m_A.data(), m_n,
+	       x.data(), 1, 0., r.data(), 1);
+	 cblas_daxpy(m_n, -1., m_b.data(), 1, r.data(), 1);
+	 auto res = std::sqrt(cblas_ddot(m_n, r.data(), 1, r.data(), 1)) /
+	       std::sqrt(cblas_ddot(m_n, m_b.data(), 1, m_b.data(), 1));
+	 auto nx = std::sqrt(cblas_ddot(m_n, x.data(), 1, x.data(), 1));
+	 std::cout << "\t[STEP " << k << "] residual = " << std::scientific
+	 << std::sqrt(rsold) << ", ||x|| = " << nx  << ", ||Ax - b||/||b|| = " << res << std::endl;
+    }
 
 }
 

@@ -63,7 +63,6 @@ int main(int argc, char ** argv) {
     // see the function for detailed documentation
     CGSolver solver;
     solver.generate_lap2d_matrix(std::stoi(argv[1]));
-    std::cout << "Good after creating Laplacian matrix" << std::endl;
 
     // get size of the matrix
     int n = solver.n();
