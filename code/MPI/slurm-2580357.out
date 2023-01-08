@@ -1,0 +1,77 @@
+make: Nothing to be done for 'all'.
+srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+	[STEP 505] residual = 1.092634e-10, ||x|| = 2.284661e+19, ||Ax - b||/||b|| = 1.625323e+14
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 505] residual = 1.092634e-10, ||x|| = 2.284661e+19, ||Ax - b||/||b|| = 1.625323e+14
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 505] residual = 1.092634e-10, ||x|| = 2.284661e+19, ||Ax - b||/||b|| = 1.625323e+14
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 505] residual = 1.092634e-10, ||x|| = 2.284661e+19, ||Ax - b||/||b|| = 1.625323e+14
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 505] residual = 1.092634e-10, ||x|| = 2.284661e+19, ||Ax - b||/||b|| = 1.625323e+14
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 505] residual = 1.092634e-10, ||x|| = 2.284661e+19, ||Ax - b||/||b|| = 1.625323e+14
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 505] residual = 1.092634e-10, ||x|| = 2.284661e+19, ||Ax - b||/||b|| = 1.625323e+14
+srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+	[STEP 632] residual = 1.169632e-10, ||x|| = 6.461997e+19, ||Ax - b||/||b|| = 9.556629e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 632] residual = 1.169632e-10, ||x|| = 6.461997e+19, ||Ax - b||/||b|| = 9.556629e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 632] residual = 1.169632e-10, ||x|| = 6.461997e+19, ||Ax - b||/||b|| = 9.556629e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 632] residual = 1.169632e-10, ||x|| = 6.461997e+19, ||Ax - b||/||b|| = 9.556629e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 632] residual = 1.169632e-10, ||x|| = 6.461997e+19, ||Ax - b||/||b|| = 9.556629e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+[h021:mpi_rank_21][error_sighandler] Caught error: Segmentation fault (signal 11)
+srun: error: h021: task 21: Segmentation fault (core dumped)
+srun: launch/slurm: _step_signal: Terminating StepId=2580357.12
+slurmstepd: error: *** STEP 2580357.12 ON h006 CANCELLED AT 2023-01-08T08:21:05 ***
+srun: error: h021: tasks 16-20,22-31: Terminated
+srun: error: h006: tasks 0-15: Terminated
+srun: Force Terminated StepId=2580357.12
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 632] residual = 1.169632e-10, ||x|| = 6.461997e+19, ||Ax - b||/||b|| = 9.556629e+13
+srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+	[STEP 931] residual = 1.047139e-10, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 931] residual = 1.047139e-10, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 931] residual = 1.047139e-10, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 931] residual = 1.047139e-10, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 931] residual = 1.047139e-10, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 931] residual = 1.047139e-10, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 931] residual = 1.047139e-10, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+	[STEP 1351] residual = 1.117989e-10, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 1351] residual = 1.117988e-10, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 1351] residual = 1.117989e-10, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 1351] residual = 1.117990e-10, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 1351] residual = 1.117989e-10, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 1351] residual = 1.117987e-10, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 1351] residual = 1.117988e-10, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+srun: Warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+	[STEP 200] residual = 8.724028e+00, ||x|| = 6.461997e+19, ||Ax - b||/||b|| = 9.556629e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 200] residual = 2.425483e+02, ||x|| = 1.086600e+20, ||Ax - b||/||b|| = 6.964690e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 200] residual = 1.074451e+03, ||x|| = 1.827729e+20, ||Ax - b||/||b|| = 5.220513e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 200] residual = 1.619852e+04, ||x|| = 3.073369e+20, ||Ax - b||/||b|| = 3.764497e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 200] residual = 3.739450e+04, ||x|| = 5.169598e+20, ||Ax - b||/||b|| = 2.680149e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 200] residual = 2.326572e+05, ||x|| = 8.693925e+20, ||Ax - b||/||b|| = 1.913393e+13
+Warning: RDMA CM Initialization failed. Continuing without RDMA CM support. Please set MV2_USE_RDMA_CM=0 to disable RDMA CM.
+	[STEP 200] residual = 8.709263e+05, ||x|| = 1.462183e+21, ||Ax - b||/||b|| = 1.377817e+13

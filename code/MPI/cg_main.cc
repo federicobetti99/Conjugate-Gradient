@@ -31,7 +31,6 @@ int main(int argc, char ** argv) {
 
     // get size of the matrix
     int n = solver.n();
-    int m = solver.m();
 
     // possibility of reducing number of iterations for weak scaling experiments
     int maxIter;

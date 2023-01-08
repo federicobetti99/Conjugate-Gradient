@@ -79,15 +79,17 @@ void CGSolver::solve(std::vector<double> & x)
     std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,
                 x.data(), 1, 0., Ap_sub.data(), 1);
-
     cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
     /// copy p into r and initialize overall p vector
     p_sub = r_sub;
 
+    MPI_Allgatherv(&p_sub.front(), count_rows, MPI_DOUBLE,
+		   &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
+
     /// compute residual rank-wise and reduce
     auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, p_sub.data(), 1);
-    MPI_Allreduce(MPI_IN_PLACE, &rsold, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &rsold, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     // for i = 1:length(b)
     int k = 0;
@@ -101,7 +103,7 @@ void CGSolver::solve(std::vector<double> & x)
 
         // alpha = rsold / (p' * Ap);
         auto conj = cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap_sub.data(), 1);
-        MPI_Allreduce(MPI_IN_PLACE, &conj, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(MPI_IN_PLACE, &conj, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         auto alpha = rsold / std::max(conj, rsold * NEARZERO);
 
         // x = x + alpha * p;
@@ -111,8 +113,8 @@ void CGSolver::solve(std::vector<double> & x)
         cblas_daxpy(count_rows, -alpha, Ap_sub.data(), 1, r_sub.data(), 1);
 
         // rsnew = r' * r;
-        auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
-        MPI_Allreduce(MPI_IN_PLACE, &rsnew, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        auto rsnew = cblas_ddot(count_rows, r_sub.data(), 1, r_sub.data(), 1);
+        MPI_Allreduce(MPI_IN_PLACE, &rsnew, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
         // check convergence with overall residual, not rank-wise
         if (std::sqrt(rsnew) < m_tolerance)
