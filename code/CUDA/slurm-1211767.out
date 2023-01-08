@@ -1,0 +1,141 @@
+make: Nothing to be done for `all'.
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 2.141195e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 2.265300e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.779242e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.612071e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.711479e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.631219e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.720226e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.314769e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.726850e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.221296e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.716044e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.230045e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.726714e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.220716e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.811387e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.288108e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 2.528351e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.367720e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 4.644465e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.608616e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 3.893858e+01 [s]
+	[STEP 488] residual = 1.102766e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.320268e-12
+Time for CG (dense solver)  = 1.018318e+01 [s]
+	[STEP 488] residual = 1.104394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.327714e-12
+Time for CG (dense solver)  = 2.934824e+00 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 2.171885e+00 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 2.087740e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.977344e+01 [s]
+	[STEP 488] residual = 1.102766e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.320268e-12
+Time for CG (dense solver)  = 5.364841e+00 [s]
+	[STEP 488] residual = 1.104394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.327714e-12
+Time for CG (dense solver)  = 1.697705e+00 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 1.431378e+00 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 1.412274e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323153e-12
+Time for CG (dense solver)  = 1.019852e+01 [s]
+	[STEP 488] residual = 1.102766e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.320268e-12
+Time for CG (dense solver)  = 2.941768e+00 [s]
+	[STEP 488] residual = 1.108360e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323260e-12
+Time for CG (dense solver)  = 1.092517e+00 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 1.136815e+00 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 1.322371e+00 [s]
+	[STEP 488] residual = 1.096139e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323183e-12
+Time for CG (dense solver)  = 5.402229e+00 [s]
+	[STEP 460] residual = 1.007001e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.321590e-12
+Time for CG (dense solver)  = 1.640405e+00 [s]
+	[STEP 461] residual = 1.023379e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.328705e-12
+Time for CG (dense solver)  = 8.807565e-01 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 9.339377e-01 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 9.594335e-01 [s]
+	[STEP 488] residual = 1.105679e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.334548e-12
+Time for CG (dense solver)  = 2.954924e+00 [s]
+	[STEP 488] residual = 1.089306e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.301332e-12
+Time for CG (dense solver)  = 1.070879e+00 [s]
+	[STEP 488] residual = 1.104642e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.326551e-12
+Time for CG (dense solver)  = 8.824890e-01 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 8.964225e-01 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 9.149299e-01 [s]
+	[STEP 460] residual = 1.007638e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.333524e-12
+Time for CG (dense solver)  = 1.633989e+00 [s]
+	[STEP 488] residual = 1.103619e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.324194e-12
+Time for CG (dense solver)  = 8.847706e-01 [s]
+	[STEP 488] residual = 1.083012e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.306951e-12
+Time for CG (dense solver)  = 8.623194e-01 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 8.514132e-01 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 9.194624e-01 [s]
+	[STEP 488] residual = 1.095784e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.316731e-12
+Time for CG (dense solver)  = 1.093721e+00 [s]
+	[STEP 488] residual = 1.097303e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.337612e-12
+Time for CG (dense solver)  = 8.877396e-01 [s]
+	[STEP 488] residual = 1.047424e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.313857e-12
+Time for CG (dense solver)  = 8.649068e-01 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 8.473225e-01 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 9.196234e-01 [s]
+	[STEP 488] residual = 1.104112e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.330240e-12
+Time for CG (dense solver)  = 9.589422e-01 [s]
+	[STEP 459] residual = 1.052265e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.320203e-12
+Time for CG (dense solver)  = 8.482048e-01 [s]
+	[STEP 488] residual = 1.093838e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.301210e-12
+Time for CG (dense solver)  = 8.606318e-01 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 8.477746e-01 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 9.256185e-01 [s]
+	[STEP 488] residual = 1.088697e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.301059e-12
+Time for CG (dense solver)  = 9.568643e-01 [s]
+	[STEP 488] residual = 1.091321e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.316298e-12
+Time for CG (dense solver)  = 8.679173e-01 [s]
+	[STEP 460] residual = 1.128463e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.311204e-12
+Time for CG (dense solver)  = 8.322084e-01 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 8.530279e-01 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 9.311190e-01 [s]
+	[STEP 488] residual = 1.083966e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.323418e-12
+Time for CG (dense solver)  = 9.571682e-01 [s]
+	[STEP 488] residual = 1.097555e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.316085e-12
+Time for CG (dense solver)  = 8.564150e-01 [s]
+	[STEP 459] residual = 1.081751e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.351346e-12
+Time for CG (dense solver)  = 8.224279e-01 [s]
+	[STEP 488] residual = 1.102394e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.319852e-12
+Time for CG (dense solver)  = 8.599258e-01 [s]
+	[STEP 459] residual = 1.091339e-10, ||x|| = 2.147364e+09, ||Ax - b||/||b|| = 1.322576e-12
+Time for CG (dense solver)  = 9.630651e-01 [s]

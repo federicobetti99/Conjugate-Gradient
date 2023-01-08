@@ -11,8 +11,7 @@ using time_point = std::chrono::time_point<clk>;
 
 
 int main(int argc, char ** argv) {
-    int provided;	
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_SINGLE, &provided);
+    MPI_Init(&argc, &argv);
 
     /// MPI: Initialize and get rank
     int prank, psize;
