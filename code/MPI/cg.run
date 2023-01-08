@@ -18,7 +18,23 @@ for N in 1024 2048 4096 8192; do
    done
 done
 
-#WEAK SCALING
+#WEAK SCALING FOR DIFFERENT STARTING POINTS
+srun -n 1  ./cgsolver 1024  ../../results/weak_scaling.txt 200
+srun -n 2  ./cgsolver 1448  ../../results/weak_scaling.txt 200 
+srun -n 4  ./cgsolver 2048  ../../results/weak_scaling.txt 200
+srun -n 8  ./cgsolver 2896  ../../results/weak_scaling.txt 200 
+srun -n 16 ./cgsolver 4096  ../../results/weak_scaling.txt 200 
+srun -n 32 ./cgsolver 5792  ../../results/weak_scaling.txt 200
+srun -n 64 ./cgsolver 8192  ../../results/weak_scaling.txt 200
+
+srun -n 1 ./cgsolver 1448 ../../results/weak_scaling.txt 200
+srun -n 2 ./cgsolver 2048 ../../results/weak_scaling.txt 200
+srun -n 4 ./cgsolver 2896 ../../results/weak_scaling.txt 200
+srun -n 8 ./cgsolver 4096 ../../results/weak_scaling.txt 200
+srun -n 16 ./cgsolver 5792 ../../results/weak_scaling.txt 200
+srun -n 32 ./cgsolver 8192 ../../results/weak_scaling.txt 200
+srun -n 64 ./cgsolver 11585 ../../results/weak_scaling.txt 200
+
 srun -n 1  ./cgsolver 2048  ../../results/weak_scaling.txt 200
 srun -n 2  ./cgsolver 2896  ../../results/weak_scaling.txt 200
 srun -n 4  ./cgsolver 4096  ../../results/weak_scaling.txt 200
@@ -26,3 +42,11 @@ srun -n 8  ./cgsolver 5792  ../../results/weak_scaling.txt 200
 srun -n 16 ./cgsolver 8192  ../../results/weak_scaling.txt 200
 srun -n 32 ./cgsolver 11585 ../../results/weak_scaling.txt 200
 srun -n 64 ./cgsolver 16384 ../../results/weak_scaling.txt 200
+
+srun -n 1  ./cgsolver 2896   ../../results/weak_scaling.txt 200
+srun -n 2  ./cgsolver 4096   ../../results/weak_scaling.txt 200
+srun -n 4  ./cgsolver 5792   ../../results/weak_scaling.txt 200
+srun -n 8  ./cgsolver 8192  ../../results/weak_scaling.txt 200
+srun -n 16 ./cgsolver 11585  ../../results/weak_scaling.txt 200
+srun -n 32 ./cgsolver 16384  ../../results/weak_scaling.txt 200
+srun -n 64 ./cgsolver 23170  ../../results/weak_scaling.txt 200
