@@ -63,27 +63,31 @@ void CGSolver::solve(std::vector<double> & x)
     num_rows = new int [psize];
     partition_matrix(m_m, psize, start_rows, num_rows);
 
-    /// rank dependent variables
     // compute subpart of the rows of the matrix destined to prank
     int count_rows = num_rows[prank];
     int start_row = start_rows[prank];
 
+    /// rank dependent variables
+    std::vector<double> tmp_sub(count_rows);
+    std::vector<double> r_sub(&m_b[start_row], &m_b[start_row+count_rows]);
+    std::vector<double> x_sub(&x[start_row], &x[start_row+count_rows]);
+    std::vector<double> Ap_sub(count_rows);
+    std::vector<double> p_sub(count_rows);
+
     /// compute residual
     // r = b - A * x;
-    std::fill_n(Ap.begin(), Ap.size(), 0.);
+    std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,
-                x.data(), 1, 0., Ap.data() + start_row, 1);
-    MPI_Allgatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, Ap.data(), num_rows, start_rows,
-                   MPI_DOUBLE, MPI_COMM_WORLD);
+                x.data(), 1, 0., Ap_sub.data(), 1);
 
-    r = m_b;
-    cblas_daxpy(r.size(), -1., Ap.data(), 1, r.data(), 1);
+    cblas_daxpy(r_sub.size(), -1., Ap_sub.data(), 1, r_sub.data(), 1);
 
     /// copy p into r and initialize overall p vector
-    p = r;
+    p_sub = r_sub;
 
-    /// compute residual
-    auto rsold = cblas_ddot(r.size(), r.data(), 1, p.data(), 1);
+    /// compute residual rank-wise and reduce
+    auto rsold = cblas_ddot(r_sub.size(), r_sub.data(), 1, p_sub.data(), 1);
+    MPI_Allreduce(MPI_IN_PLACE, &rsold, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     // for i = 1:length(b)
     int k = 0;
@@ -91,23 +95,24 @@ void CGSolver::solve(std::vector<double> & x)
 
         /// MPI: we need to gather Ap to compute the step size alpha at every iteration
         // Ap = A * p;
-        std::fill_n(Ap.begin(), Ap.size(), 0.);
+        std::fill_n(Ap_sub.begin(), Ap_sub.size(), 0.);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, count_rows, m_n, 1., m_A.data() + start_row * m_n, m_n,
-                    p.data(), 1, 0., Ap.data() + start_row, 1);
-        MPI_Allgatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, Ap.data(), num_rows, start_rows,
-                       MPI_DOUBLE, MPI_COMM_WORLD);
+                    p.data(), 1, 0., Ap_sub.data(), 1);
 
         // alpha = rsold / (p' * Ap);
-        auto alpha = rsold / std::max(cblas_ddot(p.size(), p.data(), 1, Ap.data(), 1), rsold * NEARZERO);
+        auto conj = cblas_ddot(p_sub.size(), p_sub.data(), 1, Ap_sub.data(), 1);
+        MPI_Allreduce(MPI_IN_PLACE, &conj, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        auto alpha = rsold / std::max(conj, rsold * NEARZERO);
 
         // x = x + alpha * p;
-        cblas_daxpy(m_n, alpha, p.data(), 1, x.data(), 1);
+        cblas_daxpy(count_rows, alpha, p_sub.data(), 1, x_sub.data(), 1);
 
         // r = r - alpha * Ap;
-        cblas_daxpy(m_n, -alpha, Ap.data(), 1, r.data(), 1);
+        cblas_daxpy(count_rows, -alpha, Ap_sub.data(), 1, r_sub.data(), 1);
 
         // rsnew = r' * r;
         auto rsnew = cblas_ddot(m_n, r.data(), 1, r.data(), 1);
+        MPI_Allreduce(MPI_IN_PLACE, &rsnew, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
         // check convergence with overall residual, not rank-wise
         if (std::sqrt(rsnew) < m_tolerance)
@@ -117,14 +122,22 @@ void CGSolver::solve(std::vector<double> & x)
         auto beta = rsnew / rsold;
 
         // p = r + (rsnew / rsold) * p;
-        tmp = r;
-        cblas_daxpy(m_n, beta, p.data(), 1, tmp.data(), 1);
-        p = tmp;
+        tmp_sub = r_sub;
+        cblas_daxpy(count_rows, beta, p_sub.data(), 1, tmp_sub.data(), 1);
+        p_sub = tmp_sub;
 
         // rsold = rsnew;
         rsold = rsnew;
 
+        /// MPI collective communication: gather p_sub in a global vector p from all ranks to all ranks
+        MPI_Allgatherv(&p_sub.front(), count_rows, MPI_DOUBLE,
+                       &p.front(), num_rows, start_rows, MPI_DOUBLE, MPI_COMM_WORLD);
     }
+
+    /// MPI: construct the solution from x_sub to x by stacking together the x_sub on prank 0
+    MPI_Gatherv(&x_sub.front(), count_rows, MPI_DOUBLE,
+                &x.front(), num_rows, start_rows, MPI_DOUBLE,
+                0, MPI_COMM_WORLD);
 
     if (DEBUG && prank == 0) {
 	 std::fill_n(r.begin(), r.size(), 0.);
