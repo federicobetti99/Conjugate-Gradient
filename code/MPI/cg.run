@@ -42,11 +42,3 @@ srun -n 8  ./cgsolver 5792  ../../results/weak_scaling.txt 200
 srun -n 16 ./cgsolver 8192  ../../results/weak_scaling.txt 200
 srun -n 32 ./cgsolver 11585 ../../results/weak_scaling.txt 200
 srun -n 64 ./cgsolver 16384 ../../results/weak_scaling.txt 200
-
-srun -n 1  ./cgsolver 2896   ../../results/weak_scaling.txt 200
-srun -n 2  ./cgsolver 4096   ../../results/weak_scaling.txt 200
-srun -n 4  ./cgsolver 5792   ../../results/weak_scaling.txt 200
-srun -n 8  ./cgsolver 8192  ../../results/weak_scaling.txt 200
-srun -n 16 ./cgsolver 11585  ../../results/weak_scaling.txt 200
-srun -n 32 ./cgsolver 16384  ../../results/weak_scaling.txt 200
-srun -n 64 ./cgsolver 23170  ../../results/weak_scaling.txt 200

@@ -7,11 +7,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d323e757-85ff-4367-a419-4ba4db4d42df" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.ipynb_checkpoints/plots-checkpoint.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/figures/CUDA_vertical_zoom.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.ipynb_checkpoints/plots-checkpoint.ipynb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/code/MPI/cg.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code/MPI/cg_main.cc" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg_main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/MPI/cg.hh" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.hh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/MPI/cg.run" beforeDir="false" afterPath="$PROJECT_DIR$/code/MPI/cg.run" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/figures/CUDA_naive.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/CUDA_naive.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/figures/CUDA_vertical.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/CUDA_vertical.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/figures/MPI_hard.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/MPI_hard.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/figures/MPI_weak.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/MPI_weak.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/plots.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/plots.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/results/perf.zip" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/results/strong_scaling.txt" beforeDir="false" afterPath="$PROJECT_DIR$/results/strong_scaling.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -63,6 +70,7 @@
       <workItem from="1673115216573" duration="29000" />
       <workItem from="1673115302909" duration="241000" />
       <workItem from="1673161661705" duration="416000" />
+      <workItem from="1673173597672" duration="167000" />
     </task>
     <servers />
   </component>

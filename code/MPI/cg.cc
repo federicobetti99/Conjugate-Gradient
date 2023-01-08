@@ -215,29 +215,6 @@ void CGSolver::set_max_iter(int maxIter)
 
 }
 
-Matrix CGSolver::get_submatrix(Matrix A, int N_loc, int start_m)
-{
-
-    /**
-    * Get only a subset of the rows of m_A for splitting the computation among threads
-    *
-    * @param A full matrix of size m x n
-    * @param N_loc number of local rows
-    * @param start_m first row to be considered
-    * @return a submatrix of size N_loc x n
-    */
-
-    Matrix submatrix;
-    submatrix.resize(N_loc, A.n());
-    for (int i = 0; i < N_loc; i++) {
-        for (int j = 0; j < A.n(); j++) {
-            submatrix(i, j) = A(i + start_m, j);
-        }
-    }
-    return submatrix;
-
-}
-
 void CGSolver::init_source_term(double h)
 {
 

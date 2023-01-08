@@ -24,9 +24,6 @@ public:
 
     /// generate Laplacian 2d matrix for weak scaling and strong scaling experiment
     virtual void generate_lap2d_matrix(int size);
-   
-    /// get submatrix for parallel computation
-    Matrix get_submatrix(Matrix A, int N_loc, int start_m);
 
     /// implements conjugate gradient with MPI interface
     virtual void solve(std::vector<double> & x);
