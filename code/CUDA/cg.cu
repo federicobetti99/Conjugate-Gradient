@@ -31,13 +31,16 @@ __global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH
     * @return void
     */
 
+    // define common variable to all the threads in the block
     __shared__ int blockElt;
     __shared__ int blockxInd;
     __shared__ int blockyInd;
 
-    if ((blockIdx.x + 1) * BLOCK_WIDTH <= N)
-        blockElt = BLOCK_WIDTH;
+    // compute number of elements the thread takes care of
+    if ((blockIdx.x + 1) * BLOCK_WIDTH <= N) blockElt = BLOCK_WIDTH;
     else blockElt = N % BLOCK_WIDTH;
+
+    // indexes of the block
     blockxInd = blockIdx.x * BLOCK_WIDTH;
     blockyInd = blockIdx.y * NUM_THREADS;
 
@@ -48,7 +51,7 @@ __global__ void MatVec(const int N, const int NUM_THREADS, const int BLOCK_WIDTH
     // make sure we are inside the array horizontally
     if (threadyInd < N) {
 
-        // go through the threads vertically and sum them into a variable
+        // compute contribute and atomicAdd in the corresponding index of Ap
         for (int i = 0; i < blockElt; i++)
             cSum += A(threadyInd, blockxInd + i) * p[blockxInd + i];
 
@@ -82,9 +85,11 @@ __global__ void MatVecT(const int N, const int NUM_THREADS, const int BLOCK_WIDT
     __shared__ int blockxInd;
     __shared__ int blockyInd;
 
-    if ((blockIdx.y + 1) * BLOCK_WIDTH <= N)
-        blockElt = BLOCK_WIDTH;
+    // compute number of elements the thread takes care of
+    if ((blockIdx.y + 1) * BLOCK_WIDTH <= N) blockElt = BLOCK_WIDTH;
     else blockElt = N % BLOCK_WIDTH;
+
+    // indexes of the block
     blockxInd = blockIdx.x * NUM_THREADS;
     blockyInd = blockIdx.y * BLOCK_WIDTH;
 
@@ -95,7 +100,7 @@ __global__ void MatVecT(const int N, const int NUM_THREADS, const int BLOCK_WIDT
     // make sure we are inside the array horizontally
     if (threadxInd < N) {
 
-        // go through the threads vertically and sum them into a variable
+        // compute contribute and atomicAdd in the corresponding index of Ap
         for (int i = 0; i < blockElt; i++)
             cSum += A(blockyInd + i, threadxInd) * p[blockyInd + i];
 
@@ -214,7 +219,7 @@ void CGSolver::solve(double* x, const int NUM_THREADS, const int BLOCK_WIDTH, co
 
     if (T) MatVecT<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
     else MatVec<<<matvec_grid_size, block_size>>>(m_n, NUM_THREADS, BLOCK_WIDTH, m_A, x, Ap);
-    cudaDeviceSynchronize();
+    cudaDeviceSynchronize(); // synchronize as topology changes between matrix vector products and other operations
 
     copy<<<vec_grid_size, block_size>>>(m_n, r, m_b);
     sumVec<<<vec_grid_size, block_size>>>(m_n, 1., r, -1., Ap);
